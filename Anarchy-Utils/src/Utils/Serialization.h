@@ -39,7 +39,7 @@ namespace Anarchy
 
 	inline void Serialize(OutputMemoryStream& stream, const blt::string& value)
 	{
-		Serialize(stream, value.size());
+		Serialize(stream, (size_t)value.size());
 		for (char c : value)
 		{
 			Serialize(stream, c);
@@ -49,7 +49,7 @@ namespace Anarchy
 	template<typename T>
 	inline void Serialize(OutputMemoryStream& stream, const std::vector<T>& value)
 	{
-		Serialize(stream, value.size());
+		Serialize(stream, (size_t)value.size());
 		for (const T& v : value)
 		{
 			Serialize(stream, v);

@@ -34,6 +34,18 @@ namespace Anarchy
 		void Run();
 
 		template<typename T>
+		void SendPacket(const std::vector<SocketAddress>& addresses, MessageType type, const T& data)
+		{
+			OutputMemoryStream stream;
+			Serialize(stream, type);
+			Serialize(stream, data);
+			for (const SocketAddress& to : addresses)
+			{
+				m_Socket.SendTo(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+			}
+		}
+
+		template<typename T>
 		void SendPacket(const SocketAddress& to, MessageType type, const T& data)
 		{
 			OutputMemoryStream stream;

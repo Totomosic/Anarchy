@@ -8,7 +8,9 @@ namespace Anarchy
 	{
 		None,
 		ConnectRequest,
-		ConnectResponse
+		ConnectResponse,
+		DisconnectRequest,
+		ForceDisconnect
 	};
 
 	ANCH_DEFINE_DEFAULT_SERIALIZE(MessageType);

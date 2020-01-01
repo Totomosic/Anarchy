@@ -5,24 +5,23 @@
 namespace Anarchy
 {
 
-	Anarchy::ServerConnection::ServerConnection(const SocketAddress& address)
+	ServerConnection::ServerConnection(const SocketAddress& address)
 		: m_Address(address), m_Socket(), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>(ServerEvents::ServerMessageReceived)), m_IsValid(true)
 	{
-		m_Bus.SetImmediateMode(true);
 		LaunchListenerThread();
 	}
 
-	Anarchy::ServerConnection::~ServerConnection()
+	ServerConnection::~ServerConnection()
 	{
 		m_IsValid = false;
 	}
 
-	const SocketAddress& Anarchy::ServerConnection::GetAddress() const
+	const SocketAddress& ServerConnection::GetAddress() const
 	{
 		return m_Address;
 	}
 
-	const UDPsocket& Anarchy::ServerConnection::GetSocket() const
+	const UDPsocket& ServerConnection::GetSocket() const
 	{
 		return m_Socket;
 	}
@@ -32,7 +31,7 @@ namespace Anarchy
 		return m_OnMessage;
 	}
 
-	Task<ServerConnectionResponse> Anarchy::ServerConnection::Connect(const ServerConnectionRequest& request)
+	Task<ServerConnectionResponse> ServerConnection::Connect(const ServerConnectionRequest& request)
 	{
 		Task<ServerConnectionResponse> response = TaskManager::Run([this, request]()
 			{
@@ -47,9 +46,24 @@ namespace Anarchy
 						}
 					});
 				SendPacket(MessageType::ConnectRequest, request);
-				return result.get_future().get();
+				auto future = result.get_future();
+				std::future_status status = future.wait_for(std::chrono::seconds(5));
+				if (status == std::future_status::ready)
+				{
+					return future.get();
+				}
+				ServerConnectionResponse response;
+				response.Success = false;
+				return response;
 			});
 		return response;
+	}
+
+	void ServerConnection::RequestDisconnect(uint64_t connectionId)
+	{
+		ServerDisconnectRequest request;
+		request.ConnectionId = connectionId;
+		SendPacket(MessageType::DisconnectRequest, request);
 	}
 
 	void ServerConnection::LaunchListenerThread()
@@ -75,6 +89,10 @@ namespace Anarchy
 						Deserialize(stream, e.Type);
 						e.Data = std::move(stream);
 						OnMessageReceived().Emit(std::move(e));
+					}
+					else
+					{
+						break;
 					}
 				}
 			});

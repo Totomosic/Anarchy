@@ -2,28 +2,18 @@
 #include "Server.h"
 
 #include "Lib/Authentication.h"
+#include "ServerState.h"
 
 namespace Anarchy
 {
 
+	static constexpr int TARGET_TICK_RATE = 20;
+	static const double TARGET_DELTA_TIME = 1.0 / TARGET_TICK_RATE;
+
 	void Server::Init()
 	{
 		SocketAddress address("localhost", 10000);
-		m_Socket = std::make_unique<ServerSocket>(address);
-
-		m_Socket->OnMessageReceived().AddEventListener([this](Event<ClientMessageReceived>& e)
-			{
-				BLT_INFO("Message Received from {}", e.Data.From);
-				if (e.Data.Type == MessageType::ConnectRequest)
-				{
-					ServerConnectionResponse response;
-					response.Success = true;
-					response.PlayerId = 0;
-					m_Socket->SendPacket(e.Data.From, MessageType::ConnectResponse, response);
-				}
-			});
-
-		m_Socket->Run();
+		ServerState::Get().Initialize(address);
 	}
 
 	void Server::Tick()
@@ -32,6 +22,15 @@ namespace Anarchy
 
 	void Server::Update()
 	{
+		static double prevSleep = 0;
+		double delta = Time::Get().RenderingTimeline().DeltaTime() - prevSleep;
+		double difference = TARGET_DELTA_TIME - delta;
+		if (difference > 0)
+		{
+			prevSleep = difference;
+			std::this_thread::sleep_for(std::chrono::nanoseconds((size_t)(difference * 1e9)));
+		}
+		BLT_INFO("Tick");
 	}
 
 	void Server::Render()

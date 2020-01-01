@@ -40,6 +40,7 @@ namespace Anarchy
 	inline void Deserialize(InputMemoryStream& stream, blt::string& value)
 	{
 		size_t length;
+		Deserialize(stream, length);
 		value.reserve(length + 1);
 		value.clear();
 		for (size_t i = 0; i < length; i++)

@@ -13,6 +13,7 @@ namespace Anarchy
 		void Tick() override;
 		void Update() override;
 		void Render() override;
+		void Exit() override;
 
 	};
 

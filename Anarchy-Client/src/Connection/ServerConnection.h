@@ -34,6 +34,7 @@ namespace Anarchy
 		EventEmitter<ServerMessageReceived>& OnMessageReceived();
 
 		Task<ServerConnectionResponse> Connect(const ServerConnectionRequest& request);
+		void RequestDisconnect(uint64_t connectionId);
 
 	private:
 		template<typename T>

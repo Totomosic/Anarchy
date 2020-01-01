@@ -8,7 +8,6 @@ namespace Anarchy
 	class Server : public Application
 	{
 	private:
-		std::unique_ptr<ServerSocket> m_Socket;
 
 	public:
 		void Init() override;
