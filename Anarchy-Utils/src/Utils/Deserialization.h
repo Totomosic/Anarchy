@@ -56,8 +56,8 @@ namespace Anarchy
 	{
 		size_t length;
 		Deserialize(stream, length);
-		value.reserve(length);
 		value.clear();
+		value.resize(length);
 		for (size_t i = 0; i < length; i++)
 		{
 			Deserialize(stream, value[i]);

@@ -2,7 +2,7 @@
 #include "Client.h"
 
 #include "Scenes.h"
-#include "Connection/ConnectionManager.h"
+#include "ClientState.h"
 
 namespace Anarchy
 {
@@ -32,12 +32,15 @@ namespace Anarchy
 
 	void Client::Exit()
 	{
-		if (ConnectionManager::Get().HasConnection())
+		if (ClientState::Get().HasConnection())
 		{
-			ConnectionManager::Get().Disconnect({ ConnectionManager::Get().GetConnectionId() }, 5.0).Wait();
-			ConnectionManager::Get().CloseConnection();
+			if (ClientState::Get().GetConnection().IsConnected())
+			{
+				ClientState::Get().GetConnection().Disconnect({ ClientState::Get().GetConnection().GetConnectionId() }, 5.0).Wait();
+			}
+			ClientState::Get().CloseConnection();
 		}
-		ConnectionManager::Terminate();
+		ClientState::Terminate();
 		Application::Exit();
 	}
 

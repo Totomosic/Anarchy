@@ -4,55 +4,30 @@
 namespace Anarchy
 {
 
-	std::unique_ptr<ConnectionManager> ConnectionManager::s_Instance;
-
-	ConnectionManager::ConnectionManager()
-		: m_Connection(nullptr), m_ConnectionId(InvalidConnectionId)
+	ConnectionManager::ConnectionManager(const SocketAddress& address)
+		: m_Connection(address), m_ConnectionId(InvalidConnectionId), m_Connecting(false)
 	{
 
 	}
 
-	ConnectionManager& ConnectionManager::Get()
+	bool ConnectionManager::IsConnecting() const
 	{
-		if (!s_Instance)
-		{
-			s_Instance = std::make_unique<ConnectionManager>();
-		}
-		return *s_Instance;
+		return m_Connecting;
 	}
 
-	void ConnectionManager::Terminate()
+	bool ConnectionManager::IsConnected() const
 	{
-		s_Instance = nullptr;
+		return m_ConnectionId != InvalidConnectionId;
 	}
 
-	void ConnectionManager::Initialize(const SocketAddress& address)
+	const ServerConnection& ConnectionManager::GetServerSocket() const
 	{
-		if (m_Connection != nullptr)
-		{
-			Disconnect({ GetConnectionId() }, IgnoreTimeout).Wait();
-		}
-		m_Connection = std::make_unique<ServerConnection>(address);
+		return m_Connection;
 	}
 
-	bool ConnectionManager::HasConnection() const
+	ServerConnection& ConnectionManager::GetServerSocket()
 	{
-		return m_Connection != nullptr;
-	}
-
-	const ServerConnection& ConnectionManager::GetConnection() const
-	{
-		return *m_Connection;
-	}
-
-	ServerConnection& ConnectionManager::GetConnection()
-	{
-		return *m_Connection;
-	}
-
-	void ConnectionManager::CloseConnection()
-	{
-		m_Connection = nullptr;
+		return m_Connection;
 	}
 
 	connid_t ConnectionManager::GetConnectionId() const
@@ -60,32 +35,51 @@ namespace Anarchy
 		return m_ConnectionId;
 	}
 
-	void ConnectionManager::SetConnectionId(connid_t id)
-	{
-		m_ConnectionId = id;
-	}
-
 	ClientSocketApi::Promise<ServerConnectionResponse> ConnectionManager::Connect(const ServerConnectionRequest& request, double timeoutSeconds)
 	{
+		BLT_ASSERT(!IsConnected() && !IsConnecting(), "Cannot connect now");
+		m_Connecting = true;
 		return TaskManager::Run([this, request, timeoutSeconds]()
 			{
-				return AwaitResponse<ServerConnectionResponse>(request, timeoutSeconds);
+				auto response = AwaitResponse<ServerConnectionResponse>(request, timeoutSeconds);
+				m_Connecting = false;
+				if (response && response->Success)
+				{
+					m_ConnectionId = response->ConnectionId;
+				}
+				return response;
 			});
 	}
 
 	ClientSocketApi::Promise<ServerDisconnectResponse> ConnectionManager::Disconnect(const ServerDisconnectRequest& request, double timeoutSeconds)
 	{
+		BLT_ASSERT(IsConnected() && !IsConnecting(), "Cannot disconnect now");
 		return TaskManager::Run([this, request, timeoutSeconds]()
 			{
-				return AwaitResponse<ServerDisconnectResponse>(request, timeoutSeconds);
+				auto response = AwaitResponse<ServerDisconnectResponse>(request, timeoutSeconds);
+				if (response && response->Success)
+				{
+					m_ConnectionId = InvalidConnectionId;
+				}
+				return response;
 			});
 	}
 
 	ClientSocketApi::Promise<CreateCharacterResponse> ConnectionManager::CreateCharacter(const CreateCharacterRequest& request, double timeoutSeconds)
 	{
+		BLT_ASSERT(IsConnected(), "Must be connected");
 		return TaskManager::Run([this, request, timeoutSeconds]()
 			{
 				return AwaitResponse<CreateCharacterResponse>(request, timeoutSeconds);
+			});
+	}
+
+	ClientSocketApi::Promise<GetEntitiesResponse> ConnectionManager::GetEntities(const GetEntitiesRequest& request, double timeoutSeconds)
+	{
+		BLT_ASSERT(IsConnected(), "Must be connected");
+		return TaskManager::Run([this, request, timeoutSeconds]()
+			{
+				return AwaitResponse<GetEntitiesResponse>(request, timeoutSeconds);
 			});
 	}
 

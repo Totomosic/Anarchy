@@ -2,7 +2,7 @@
 #include "Scenes.h"
 #include "Events.h"
 
-#include "Connection/ConnectionManager.h"
+#include "ClientState.h"
 
 namespace Anarchy
 {
@@ -29,49 +29,34 @@ namespace Anarchy
 		connectButton.CreateText("Connect", displayFont, Color::Black, Transform({ 0, 0, 1 }));
 		connectButton.Events().OnClick().AddEventListener([&background, &serverInput, &gameScene](Event<UI<MouseClickEvent>>& e)
 			{
-				if (!ConnectionManager::Get().HasConnection())
+				if (!ClientState::Get().HasConnection() || (!ClientState::Get().GetConnection().IsConnected() && !ClientState::Get().GetConnection().IsConnecting()))
 				{
 					ConnectToServerEvent data;
 					data.Username = "Totomosic";
 					data.Server = serverInput.GetText();
-					//EventManager::Get().Bus().Emit(ClientEvents::ConnectToServer, data);
 
 					size_t colon = data.Server.rfind(':');
 					blt::string host = data.Server.substr(0, colon);
 					blt::string port = data.Server.substr(colon + 1);
 					SocketAddress address(host, port);
-					ConnectionManager::Get().Initialize(address);
+					ClientState::Get().InitializeConnection(address);
 
 					ServerConnectionRequest request;
 					request.Username = data.Username;
 
 					UIRectangle& connectingIcon = background.CreateRectangle(30, 30, Color::Red, Transform({ 170, -60, 1 }));
 
-					Task<std::optional<ServerConnectionResponse>> response = ConnectionManager::Get().Connect(request, 5.0);
+					Task<std::optional<ServerConnectionResponse>> response = ClientState::Get().GetConnection().Connect(request, 5.0);
 					response.ContinueWithOnMainThread([&gameScene, &connectingIcon](std::optional<ServerConnectionResponse> response)
 						{
 							connectingIcon.Remove();
 							if (response && response->Success)
 							{
-								ConnectionManager::Get().SetConnectionId(response->ConnectionId);
 								SceneManager::Get().SetCurrentScene(gameScene);
-								std::optional<CreateCharacterResponse> character = ConnectionManager::Get().CreateCharacter({ ConnectionManager::Get().GetConnectionId() }, 5.0).Result();
-								if (character && character->Success)
-								{
-									BLT_TRACE("Successfully Connected to Server");
-									BLT_TRACE("Connection Id {}", response->ConnectionId);
-									BLT_TRACE("Character Id {}", character->Data.EntityId);
-								}
-								else
-								{
-									BLT_WARN("Failed to create character");
-									ConnectionManager::Get().CloseConnection();
-								}
 							}
 							else
 							{
 								BLT_WARN("Connection Failed");
-								ConnectionManager::Get().CloseConnection();
 							}
 						});
 				}
@@ -82,6 +67,39 @@ namespace Anarchy
 
 	void CreateGameScene(Scene& scene, const Window& window)
 	{
+		
+		scene.OnLoad().AddEventListener([&scene](Event<SceneLoadEvent>& e)
+			{
+				CreateCharacterRequest request;
+				request.ConnectionId = ClientState::Get().GetConnection().GetConnectionId();
+				std::optional<CreateCharacterResponse> character = ClientState::Get().GetConnection().CreateCharacter(request, 5.0).Result();
+				if (character && character->Success)
+				{
+					Layer& layer = scene.AddLayer();
+					EntityHandle camera = layer.GetFactory().Camera(Matrix4f::Orthographic(0, 16, 0, 9, -100, 100));
+					layer.SetActiveCamera(camera);
+
+					BLT_INFO("Created Character Successfully");
+					ClientState::Get().InitializeEntities(scene, layer);
+					EntityHandle player = ClientState::Get().GetEntities().CreateFromEntityData(character->Data);
+
+					std::optional<GetEntitiesResponse> entities = ClientState::Get().GetConnection().GetEntities({ ClientState::Get().GetConnection().GetConnectionId(), 0 }, 5.0).Result();
+					if (entities)
+					{
+						for (const EntityData& data : entities->Entities)
+						{
+							if (data.NetworkId != character->Data.NetworkId)
+							{
+								ClientState::Get().GetEntities().CreateFromEntityData(data);
+							}
+						}
+					}
+				}
+			});
+		scene.OnUnload().AddEventListener([&scene](Event<SceneUnloadEvent>& e)
+			{
+				scene.Clear();
+			});
 	}
 
 }

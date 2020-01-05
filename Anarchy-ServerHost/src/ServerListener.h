@@ -48,6 +48,7 @@ namespace Anarchy
 		ServerDisconnectResponse Disconnect(const ServerRequest<ServerDisconnectRequest>& request) override;
 
 		CreateCharacterResponse CreateCharacter(const ServerRequest<CreateCharacterRequest>& request) override;
+		GetEntitiesResponse GetEntities(const ServerRequest<GetEntitiesRequest>& request) override;
 	};
 
 }

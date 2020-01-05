@@ -1,5 +1,6 @@
 #pragma once
 #include "ServerLib.h"
+#include "GameState.h"
 
 namespace Anarchy
 {
@@ -26,56 +27,97 @@ namespace Anarchy
 		Deserialize(stream, request.ConnectionId);
 	}
 
-	struct CharacterData
-	{
-	public:
-		entityid_t EntityId;
-		prefab_t PrefabId;
-		int Level;
-		blt::string Name;
-		int DimensionId;
-		Vector2i TilePosition;
-	};
-
-	inline void Serialize(OutputMemoryStream& stream, const CharacterData& value)
-	{
-		Serialize(stream, value.EntityId);
-		Serialize(stream, value.PrefabId);
-		Serialize(stream, value.Level);
-		Serialize(stream, value.Name);
-		Serialize(stream, value.DimensionId);
-		Serialize(stream, value.TilePosition);
-	}
-
-	inline void Deserialize(InputMemoryStream& stream, CharacterData& value)
-	{
-		Deserialize(stream, value.EntityId);
-		Deserialize(stream, value.PrefabId);
-		Deserialize(stream, value.Level);
-		Deserialize(stream, value.Name);
-		Deserialize(stream, value.DimensionId);
-		Deserialize(stream, value.TilePosition);
-	}
-
 	struct CreateCharacterResponse
 	{
 	public:
 		static constexpr MessageType Type = MessageType::CreateCharacterResponse;
 	public:
 		bool Success;
-		CharacterData Data;
+		EntityData Data;
 	};
 
-	inline void Serialize(OutputMemoryStream& stream, const CreateCharacterResponse& request)
+	inline void Serialize(OutputMemoryStream& stream, const CreateCharacterResponse& response)
 	{
-		Serialize(stream, request.Success);
-		Serialize(stream, request.Data);
+		Serialize(stream, response.Success);
+		Serialize(stream, response.Data);
 	}
 
-	inline void Deserialize(InputMemoryStream& stream, CreateCharacterResponse& request)
+	inline void Deserialize(InputMemoryStream& stream, CreateCharacterResponse& response)
 	{
-		Deserialize(stream, request.Success);
-		Deserialize(stream, request.Data);
+		Deserialize(stream, response.Success);
+		Deserialize(stream, response.Data);
 	}
+
+	// =======================================================================================
+	// GET ENTITIES
+	// =======================================================================================
+
+	struct GetEntitiesRequest
+	{
+	public:
+		static constexpr MessageType Type = MessageType::GetEntitiesRequest;
+
+	public:
+		connid_t ConnectionId;
+		int DimensionId;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const GetEntitiesRequest& request)
+	{
+		Serialize(stream, request.ConnectionId);
+		Serialize(stream, request.DimensionId);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, GetEntitiesRequest& request)
+	{
+		Deserialize(stream, request.ConnectionId);
+		Deserialize(stream, request.DimensionId);
+	}
+
+	struct GetEntitiesResponse
+	{
+	public:
+		static constexpr MessageType Type = MessageType::GetEntitiesResponse;
+
+	public:
+		std::vector<EntityData> Entities;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const GetEntitiesResponse& response)
+	{
+		Serialize(stream, response.Entities);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, GetEntitiesResponse& response)
+	{
+		Deserialize(stream, response.Entities);
+	}
+
+	// =======================================================================================
+	// GET TILEMAP
+	// =======================================================================================
+
+	struct GetTilemapRequest
+	{
+	public:
+		static constexpr MessageType Type = MessageType::GetTilemapRequest;
+
+	public:
+		int DimensionId;
+		int HeightLevel;
+		Vector2i CenterTile;
+		int Width;
+		int Height;
+	};
+
+	struct GetTilemapResponse
+	{
+	public:
+		static constexpr MessageType Type = MessageType::GetTilemapResponse;
+
+	public:
+		bool Success;
+		Tilemap Data;
+	};
 
 }

@@ -2,7 +2,7 @@
 #include "Connections/ConnectionsManager.h"
 #include "ServerSocket.h"
 #include "ServerListener.h"
-#include "Entities/EntityCollection.h"
+#include "Entities/ServerEntityCollection.h"
 
 namespace Anarchy
 {
@@ -14,7 +14,7 @@ namespace Anarchy
 		std::unique_ptr<ServerListener> m_Listener;
 		ConnectionsManager m_Connections;
 
-		std::unique_ptr<EntityCollection> m_Entities;
+		std::unique_ptr<ServerEntityCollection> m_Entities;
 
 	private:
 		ServerState();
@@ -30,8 +30,8 @@ namespace Anarchy
 		const ConnectionsManager& GetConnections() const;
 		ConnectionsManager& GetConnections();
 
-		const EntityCollection& GetEntities() const;
-		EntityCollection& GetEntities();
+		const ServerEntityCollection& GetEntities() const;
+		ServerEntityCollection& GetEntities();
 
 	};
 

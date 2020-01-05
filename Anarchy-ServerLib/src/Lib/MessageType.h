@@ -14,7 +14,12 @@ namespace Anarchy
 		ForceDisconnect,
 
 		CreateCharacterRequest,
-		CreateCharacterResponse
+		CreateCharacterResponse,
+
+		GetEntitiesRequest,
+		GetEntitiesResponse,
+		GetTilemapRequest,
+		GetTilemapResponse
 	};
 
 	ANCH_DEFINE_DEFAULT_SERIALIZE(MessageType);

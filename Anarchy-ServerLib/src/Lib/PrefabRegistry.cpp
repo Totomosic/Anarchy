@@ -40,7 +40,6 @@ namespace Anarchy
 
 	void PrefabRegistry::CreatePrefabs()
 	{
-
 		Register([](Layer& layer, bool addGraphicsComponents)
 			{
 				EntityHandle entity = layer.GetFactory().CreateTransform(Transform());
@@ -53,7 +52,6 @@ namespace Anarchy
 				}
 				return entity;
 			});
-
 	}
 
 }

@@ -17,7 +17,7 @@ namespace Anarchy
 
 	void ServerState::Initialize(const SocketAddress& serverAddress, Scene& gameScene, Layer& gameLayer)
 	{
-		m_Entities = std::make_unique<EntityCollection>(gameScene, gameLayer);
+		m_Entities = std::make_unique<ServerEntityCollection>(gameScene, gameLayer);
 		m_Socket = std::make_unique<ServerSocket>(serverAddress);
 		m_Socket->Run();
 		BLT_INFO("Server starting at {}", serverAddress);
@@ -44,12 +44,12 @@ namespace Anarchy
 		return m_Connections;
 	}
 
-	const EntityCollection& ServerState::GetEntities() const
+	const ServerEntityCollection& ServerState::GetEntities() const
 	{
 		return *m_Entities;
 	}
 
-	EntityCollection& ServerState::GetEntities()
+	ServerEntityCollection& ServerState::GetEntities()
 	{
 		return *m_Entities;
 	}

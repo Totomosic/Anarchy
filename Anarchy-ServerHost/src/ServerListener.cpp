@@ -2,7 +2,7 @@
 #include "ServerListener.h"
 #include "ServerState.h"
 
-#include "Lib/Components/NetworkId.h"
+#include "Lib/Entities/Components/NetworkId.h"
 
 namespace Anarchy
 {
@@ -15,6 +15,7 @@ namespace Anarchy
 		Register<ServerConnectionResponse, ServerConnectionRequest>(ANCH_SERVER_BIND_FN(ServerListener::Connect));
 		Register<ServerDisconnectResponse, ServerDisconnectRequest>(ANCH_SERVER_BIND_FN(ServerListener::Disconnect));
 		Register<CreateCharacterResponse, CreateCharacterRequest>(ANCH_SERVER_BIND_FN(ServerListener::CreateCharacter));
+		Register<GetEntitiesResponse, GetEntitiesRequest>(ANCH_SERVER_BIND_FN(ServerListener::GetEntities));
 
 		m_Listener = m_ServerSocket.OnMessageReceived().AddScopedEventListener([this](Event<ClientMessageReceived>& e)
 			{
@@ -55,16 +56,26 @@ namespace Anarchy
 		BLT_TRACE("[{0}] Create Character Request Received", request.Request.ConnectionId);
 		if (ServerState::Get().GetConnections().HasConnection(request.Request.ConnectionId))
 		{
-			EntityHandle entity = ServerState::Get().GetEntities().CreateEntity(0, request.Request.ConnectionId);
-
-			response.Data.EntityId = entity.GetComponent<NetworkId>()->Id;
-			response.Data.Name = ServerState::Get().GetConnections().GetConnection(request.Request.ConnectionId).GetUsername();
+			response.Data.NetworkId = ServerState::Get().GetEntities().GetNextEntityId();
 			response.Data.Level = 1;
 			response.Data.PrefabId = 0;
 			response.Data.DimensionId = 0;
-			response.Data.TilePosition = { 0, 0 };
+			response.Data.TilePosition = { Random::NextInt(0, 16), Random::NextInt(0, 9) };
+
+			EntityHandle entity = ServerState::Get().GetEntities().CreateFromEntityData(response.Data, request.Request.ConnectionId);
 
 			response.Success = true;
+		}
+		return response;
+	}
+
+	GetEntitiesResponse ServerListener::GetEntities(const ServerRequest<GetEntitiesRequest>& request)
+	{
+		BLT_TRACE("[{0}] Get Entities Request Received", request.Request.ConnectionId);
+		GetEntitiesResponse response;
+		for (EntityHandle entity : ServerState::Get().GetEntities().GetAllEntities())
+		{
+			response.Entities.push_back(ServerState::Get().GetEntities().GetDataFromEntity(entity));
 		}
 		return response;
 	}
