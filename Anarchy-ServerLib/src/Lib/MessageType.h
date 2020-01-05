@@ -10,7 +10,11 @@ namespace Anarchy
 		ConnectRequest,
 		ConnectResponse,
 		DisconnectRequest,
-		ForceDisconnect
+		DisconnectResponse,
+		ForceDisconnect,
+
+		CreateCharacterRequest,
+		CreateCharacterResponse
 	};
 
 	ANCH_DEFINE_DEFAULT_SERIALIZE(MessageType);

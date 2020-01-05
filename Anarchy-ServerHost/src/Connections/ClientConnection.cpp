@@ -4,11 +4,11 @@
 namespace Anarchy
 {
 
-	ClientConnection::ClientConnection() : ClientConnection("", InvalidId, {})
+	ClientConnection::ClientConnection() : ClientConnection("", InvalidConnectionId, {})
 	{
 	}
 
-	ClientConnection::ClientConnection(const blt::string& username, uint64_t connectionId, const SocketAddress& address)
+	ClientConnection::ClientConnection(const blt::string& username, connid_t connectionId, const SocketAddress& address)
 		: m_Username(username), m_ConnectionId(connectionId), m_Address(address)
 	{
 	}
@@ -18,7 +18,7 @@ namespace Anarchy
 		return m_Username;
 	}
 
-	uint64_t ClientConnection::GetConnectionId() const
+	connid_t ClientConnection::GetConnectionId() const
 	{
 		return m_ConnectionId;
 	}

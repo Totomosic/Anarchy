@@ -11,6 +11,8 @@ namespace Anarchy
 	struct ServerConnectionRequest
 	{
 	public:
+		static constexpr MessageType Type = MessageType::ConnectRequest;
+	public:
 		blt::string Username;
 	};
 
@@ -27,8 +29,10 @@ namespace Anarchy
 	struct ServerConnectionResponse
 	{
 	public:
+		static constexpr MessageType Type = MessageType::ConnectResponse;
+	public:
 		bool Success;
-		uint64_t ConnectionId;
+		connid_t ConnectionId;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const ServerConnectionResponse& value)
@@ -50,7 +54,9 @@ namespace Anarchy
 	struct ServerDisconnectRequest
 	{
 	public:
-		uint64_t ConnectionId;
+		static constexpr MessageType Type = MessageType::DisconnectRequest;
+	public:
+		connid_t ConnectionId;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const ServerDisconnectRequest& value)
@@ -63,10 +69,32 @@ namespace Anarchy
 		Deserialize(stream, value.ConnectionId);
 	}
 
-	// Used as a successful response to ServerDisconnectRequest or if the server is forcefully disconnecting someone
+	struct ServerDisconnectResponse
+	{
+	public:
+		static constexpr MessageType Type = MessageType::DisconnectResponse;
+	public:
+		bool Success;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const ServerDisconnectResponse& value)
+	{
+		Serialize(stream, value.Success);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, ServerDisconnectResponse& value)
+	{
+		Deserialize(stream, value.Success);
+	}
+
+	// =======================================================================================
+	// FORCE DISCONNECT
+	// =======================================================================================
+	
 	struct ForceDisconnectMessage
 	{
-	
+	public:
+		static constexpr MessageType Type = MessageType::ForceDisconnect;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const ForceDisconnectMessage& value)

@@ -32,8 +32,11 @@ namespace Anarchy
 
 	void Client::Exit()
 	{
-		ConnectionManager::Get().GetConnection().RequestDisconnect(ConnectionManager::Get().GetConnectionId());
-		ConnectionManager::Get().CloseConnection();
+		if (ConnectionManager::Get().HasConnection())
+		{
+			ConnectionManager::Get().Disconnect({ ConnectionManager::Get().GetConnectionId() }, 5.0).Wait();
+			ConnectionManager::Get().CloseConnection();
+		}
 		ConnectionManager::Terminate();
 		Application::Exit();
 	}

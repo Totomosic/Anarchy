@@ -7,19 +7,20 @@ namespace Anarchy
 	class ConnectionsManager
 	{
 	private:
-		IdManager<uint64_t> m_IdManager;
-		std::unordered_map<uint64_t, ClientConnection> m_Connections;
+		IdManager<connid_t> m_IdManager;
+		std::unordered_map<connid_t, ClientConnection> m_Connections;
 
 	public:
 		ConnectionsManager();
 
-		const ClientConnection& GetConnection(uint64_t id) const;
-		ClientConnection& GetConnection(uint64_t id);
+		bool HasConnection(connid_t id) const;
+		const ClientConnection& GetConnection(connid_t id) const;
+		ClientConnection& GetConnection(connid_t id);
 		std::vector<const ClientConnection*> GetConnections() const;
 		std::vector<ClientConnection*> GetConnections();
 
 		ClientConnection& AddConnection(const blt::string& username, const SocketAddress& address);
-		bool RemoveConnection(uint64_t id);
+		bool RemoveConnection(connid_t id);
 	};
 
 }

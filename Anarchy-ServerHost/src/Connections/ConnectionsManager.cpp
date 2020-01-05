@@ -5,16 +5,21 @@ namespace Anarchy
 {
 
 	ConnectionsManager::ConnectionsManager()
-		: m_IdManager(0, std::numeric_limits<uint64_t>::max()), m_Connections()
+		: m_IdManager(0, std::numeric_limits<connid_t>::max()), m_Connections()
 	{
 	}
 
-	const ClientConnection& ConnectionsManager::GetConnection(uint64_t id) const
+	bool ConnectionsManager::HasConnection(connid_t id) const
+	{
+		return m_Connections.find(id) != m_Connections.end();
+	}
+
+	const ClientConnection& ConnectionsManager::GetConnection(connid_t id) const
 	{
 		return m_Connections.at(id);
 	}
 
-	ClientConnection& ConnectionsManager::GetConnection(uint64_t id)
+	ClientConnection& ConnectionsManager::GetConnection(connid_t id)
 	{
 		return m_Connections.at(id);
 	}
@@ -41,16 +46,17 @@ namespace Anarchy
 
 	ClientConnection& ConnectionsManager::AddConnection(const blt::string& username, const SocketAddress& address)
 	{
-		uint64_t id = m_IdManager.GetNextId();
+		connid_t id = m_IdManager.GetNextId();
 		m_Connections[id] = ClientConnection(username, id, address);
 		return GetConnection(id);
 	}
 
-	bool ConnectionsManager::RemoveConnection(uint64_t id)
+	bool ConnectionsManager::RemoveConnection(connid_t id)
 	{
 		if (m_Connections.find(id) != m_Connections.end())
 		{
 			m_Connections.erase(id);
+			m_IdManager.ReleaseId(id);
 			return true;
 		}
 		return false;

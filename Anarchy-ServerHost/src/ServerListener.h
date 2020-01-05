@@ -1,31 +1,53 @@
 #pragma once
 #include "ServerSocket.h"
-#include "Lib/Authentication.h"
+#include "Lib/SocketApi.h"
 
 namespace Anarchy
 {
 
-	class ServerListener
+	class ServerListener : public ServerSocketApi
 	{
-	public:
-		template<typename T>
-		struct ServerMessage
-		{
-		public:
-			MessageType Type;
-			SocketAddress From;
-			T Data;
-		};
-
 	private:
 		ScopedEventListener m_Listener;
 		ServerSocket& m_ServerSocket;
 
+		std::unordered_map<MessageType, std::function<void(const SocketAddress&, InputMemoryStream&)>> m_MessageHandlers;
+
 	public:
 		ServerListener(ServerSocket& socket);
 
-		void OnConnectionRequest(const ServerMessage<ServerConnectionRequest>& request);
-		void OnDisconnectRequest(const ServerMessage<ServerDisconnectRequest>& request);
+		template<typename TResponse, typename TRequest>
+		void Register(const std::function<TResponse(const ServerRequest<TRequest>&)>& callback)
+		{
+			MessageType messageType = TRequest::Type;
+			BLT_ASSERT(m_MessageHandlers.find(messageType) == m_MessageHandlers.end(), "Handler already exists for message type");
+			m_MessageHandlers[messageType] = [callback, &socket{ m_ServerSocket }](const SocketAddress& address, InputMemoryStream& data)
+			{
+				ServerRequest<TRequest> srequest;
+				srequest.From = address;
+				Deserialize(data, srequest.Request);
+				TResponse response = callback(srequest);
+				socket.SendPacket(address, TResponse::Type, response);
+			};
+		}
+
+		template<typename TRequest>
+		void Register(const std::function<void(const ServerRequest<TRequest>&)>& callback)
+		{
+			BLT_ASSERT(m_MessageHandlers.find(messageType) == m_MessageHandlers.end(), "Handler already exists for message type");
+			m_MessageHandlers[messageType] = [callback, &socket{ m_ServerSocket }](const SocketAddress& address, InputMemoryStream& data)
+			{
+				ServerRequest<TRequest> srequest;
+				srequest.From = address;
+				Deserialize(data, srequest.Request);
+				callback(srequest);
+			};
+		}
+
+		ServerConnectionResponse Connect(const ServerRequest<ServerConnectionRequest>& request) override;
+		ServerDisconnectResponse Disconnect(const ServerRequest<ServerDisconnectRequest>& request) override;
+
+		CreateCharacterResponse CreateCharacter(const ServerRequest<CreateCharacterRequest>& request) override;
 	};
 
 }

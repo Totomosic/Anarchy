@@ -7,7 +7,7 @@ namespace Anarchy
 	std::unique_ptr<ConnectionManager> ConnectionManager::s_Instance;
 
 	ConnectionManager::ConnectionManager()
-		: m_Connection(nullptr), m_ConnectionId(0)
+		: m_Connection(nullptr), m_ConnectionId(InvalidConnectionId)
 	{
 
 	}
@@ -30,9 +30,14 @@ namespace Anarchy
 	{
 		if (m_Connection != nullptr)
 		{
-			m_Connection->RequestDisconnect(GetConnectionId());
+			Disconnect({ GetConnectionId() }, IgnoreTimeout).Wait();
 		}
 		m_Connection = std::make_unique<ServerConnection>(address);
+	}
+
+	bool ConnectionManager::HasConnection() const
+	{
+		return m_Connection != nullptr;
 	}
 
 	const ServerConnection& ConnectionManager::GetConnection() const
@@ -50,14 +55,38 @@ namespace Anarchy
 		m_Connection = nullptr;
 	}
 
-	uint64_t ConnectionManager::GetConnectionId() const
+	connid_t ConnectionManager::GetConnectionId() const
 	{
 		return m_ConnectionId;
 	}
 
-	void ConnectionManager::SetConnectionId(uint64_t id)
+	void ConnectionManager::SetConnectionId(connid_t id)
 	{
 		m_ConnectionId = id;
+	}
+
+	ClientSocketApi::Promise<ServerConnectionResponse> ConnectionManager::Connect(const ServerConnectionRequest& request, double timeoutSeconds)
+	{
+		return TaskManager::Run([this, request, timeoutSeconds]()
+			{
+				return AwaitResponse<ServerConnectionResponse>(request, timeoutSeconds);
+			});
+	}
+
+	ClientSocketApi::Promise<ServerDisconnectResponse> ConnectionManager::Disconnect(const ServerDisconnectRequest& request, double timeoutSeconds)
+	{
+		return TaskManager::Run([this, request, timeoutSeconds]()
+			{
+				return AwaitResponse<ServerDisconnectResponse>(request, timeoutSeconds);
+			});
+	}
+
+	ClientSocketApi::Promise<CreateCharacterResponse> ConnectionManager::CreateCharacter(const CreateCharacterRequest& request, double timeoutSeconds)
+	{
+		return TaskManager::Run([this, request, timeoutSeconds]()
+			{
+				return AwaitResponse<CreateCharacterResponse>(request, timeoutSeconds);
+			});
 	}
 
 }

@@ -12,8 +12,10 @@ namespace Anarchy
 
 	void Server::Init()
 	{
+		Scene& gameScene = SceneManager::Get().AddScene();
+		Layer& gameLayer = gameScene.AddLayer();
 		SocketAddress address("localhost", 10000);
-		ServerState::Get().Initialize(address);
+		ServerState::Get().Initialize(address, gameScene, gameLayer);
 	}
 
 	void Server::Tick()
@@ -30,7 +32,6 @@ namespace Anarchy
 			prevSleep = difference;
 			std::this_thread::sleep_for(std::chrono::nanoseconds((size_t)(difference * 1e9)));
 		}
-		BLT_INFO("Tick");
 	}
 
 	void Server::Render()

@@ -33,10 +33,6 @@ namespace Anarchy
 		const UDPsocket& GetSocket() const;
 		EventEmitter<ServerMessageReceived>& OnMessageReceived();
 
-		Task<ServerConnectionResponse> Connect(const ServerConnectionRequest& request);
-		void RequestDisconnect(uint64_t connectionId);
-
-	private:
 		template<typename T>
 		void SendPacket(MessageType type, const T& data)
 		{
@@ -46,6 +42,7 @@ namespace Anarchy
 			m_Socket.SendTo(m_Address, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
 		}
 
+	private:
 		void LaunchListenerThread();
 
 	};

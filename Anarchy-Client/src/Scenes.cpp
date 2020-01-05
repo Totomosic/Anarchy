@@ -27,35 +27,54 @@ namespace Anarchy
 
 		UIRectangle& connectButton = background.CreateRectangle(300, 50, Color(50, 200, 50), Transform({ 0, -60, 1 }));
 		connectButton.CreateText("Connect", displayFont, Color::Black, Transform({ 0, 0, 1 }));
-		connectButton.Events().OnClick().AddEventListener([&serverInput, &gameScene](Event<UI<MouseClickEvent>>& e)
+		connectButton.Events().OnClick().AddEventListener([&background, &serverInput, &gameScene](Event<UI<MouseClickEvent>>& e)
 			{
-				ConnectToServerEvent data;
-				data.Username = "Totomosic";
-				data.Server = serverInput.GetText();
-				//EventManager::Get().Bus().Emit(ClientEvents::ConnectToServer, data);
+				if (!ConnectionManager::Get().HasConnection())
+				{
+					ConnectToServerEvent data;
+					data.Username = "Totomosic";
+					data.Server = serverInput.GetText();
+					//EventManager::Get().Bus().Emit(ClientEvents::ConnectToServer, data);
 
-				size_t colon = data.Server.find(':');
-				blt::string host = data.Server.substr(0, colon);
-				blt::string port = data.Server.substr(colon + 1);
-				SocketAddress address(host, port);
-				ConnectionManager::Get().Initialize(address);
+					size_t colon = data.Server.rfind(':');
+					blt::string host = data.Server.substr(0, colon);
+					blt::string port = data.Server.substr(colon + 1);
+					SocketAddress address(host, port);
+					ConnectionManager::Get().Initialize(address);
 
-				ServerConnectionRequest request;
-				request.Username = data.Username;
+					ServerConnectionRequest request;
+					request.Username = data.Username;
 
-				Task<ServerConnectionResponse> response = ConnectionManager::Get().GetConnection().Connect(request);
-				response.ContinueWithOnMainThread([&gameScene](ServerConnectionResponse response)
-					{
-						if (response.Success)
+					UIRectangle& connectingIcon = background.CreateRectangle(30, 30, Color::Red, Transform({ 170, -60, 1 }));
+
+					Task<std::optional<ServerConnectionResponse>> response = ConnectionManager::Get().Connect(request, 5.0);
+					response.ContinueWithOnMainThread([&gameScene, &connectingIcon](std::optional<ServerConnectionResponse> response)
 						{
-							ConnectionManager::Get().SetConnectionId(response.ConnectionId);
-							SceneManager::Get().SetCurrentScene(gameScene);
-						}
-						else
-						{
-							BLT_WARN("Connection Failed");
-						}
-					});
+							connectingIcon.Remove();
+							if (response && response->Success)
+							{
+								ConnectionManager::Get().SetConnectionId(response->ConnectionId);
+								SceneManager::Get().SetCurrentScene(gameScene);
+								std::optional<CreateCharacterResponse> character = ConnectionManager::Get().CreateCharacter({ ConnectionManager::Get().GetConnectionId() }, 5.0).Result();
+								if (character && character->Success)
+								{
+									BLT_TRACE("Successfully Connected to Server");
+									BLT_TRACE("Connection Id {}", response->ConnectionId);
+									BLT_TRACE("Character Id {}", character->Data.EntityId);
+								}
+								else
+								{
+									BLT_WARN("Failed to create character");
+									ConnectionManager::Get().CloseConnection();
+								}
+							}
+							else
+							{
+								BLT_WARN("Connection Failed");
+								ConnectionManager::Get().CloseConnection();
+							}
+						});
+				}
 			});
 
 		background.CreateText("Connecting As: Totomosic", displayFont, Color::Black, Transform({ 0, -100, 1 }));

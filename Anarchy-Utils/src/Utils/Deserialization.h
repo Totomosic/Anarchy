@@ -45,7 +45,9 @@ namespace Anarchy
 		value.clear();
 		for (size_t i = 0; i < length; i++)
 		{
-			Deserialize(stream, value.at(i));
+			char c;
+			Deserialize(stream, c);
+			value.append(c);
 		}
 	}
 
