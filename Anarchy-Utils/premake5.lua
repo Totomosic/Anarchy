@@ -52,6 +52,16 @@ do
                 "_CRT_SECURE_NO_WARNINGS",
             }
 
+        filter "system:linux"
+            systemversion "latest"
+
+            defines
+            {
+                "BLT_PLATFORM_LINUX",
+                "BLT_BUILD_STATIC",
+                "_CRT_SECURE_NO_WARNINGS",
+            }
+
         filter "configurations:Debug"
             defines "BLT_DEBUG"
             runtime "Debug"

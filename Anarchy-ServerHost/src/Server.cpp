@@ -14,7 +14,7 @@ namespace Anarchy
 	{
 		Scene& gameScene = SceneManager::Get().AddScene();
 		Layer& gameLayer = gameScene.AddLayer();
-		SocketAddress address("localhost", 10000);
+		SocketAddress address(127, 0, 0, 1, 10000);
 		ServerState::Get().Initialize(address, gameScene, gameLayer);
 	}
 

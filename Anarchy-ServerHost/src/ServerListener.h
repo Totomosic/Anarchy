@@ -21,21 +21,22 @@ namespace Anarchy
 		{
 			MessageType messageType = TRequest::Type;
 			BLT_ASSERT(m_MessageHandlers.find(messageType) == m_MessageHandlers.end(), "Handler already exists for message type");
-			m_MessageHandlers[messageType] = [callback, &socket{ m_ServerSocket }](const SocketAddress& address, InputMemoryStream& data)
+			m_MessageHandlers[messageType] = [callback, this](const SocketAddress& address, InputMemoryStream& data)
 			{
 				ServerRequest<TRequest> srequest;
 				srequest.From = address;
 				Deserialize(data, srequest.Request);
 				TResponse response = callback(srequest);
-				socket.SendPacket(address, TResponse::Type, response);
+				m_ServerSocket.SendPacket(address, TResponse::Type, response);
 			};
 		}
 
 		template<typename TRequest>
 		void Register(const std::function<void(const ServerRequest<TRequest>&)>& callback)
 		{
+			MessageType messageType = TRequest::Type;
 			BLT_ASSERT(m_MessageHandlers.find(messageType) == m_MessageHandlers.end(), "Handler already exists for message type");
-			m_MessageHandlers[messageType] = [callback, &socket{ m_ServerSocket }](const SocketAddress& address, InputMemoryStream& data)
+			m_MessageHandlers[messageType] = [callback](const SocketAddress& address, InputMemoryStream& data)
 			{
 				ServerRequest<TRequest> srequest;
 				srequest.From = address;

@@ -44,7 +44,7 @@ do
 
         links
         {
-            "Anarchy-ServerLib"
+            "Bolt-Core"
         }
 
         filter "system:windows"
@@ -53,6 +53,16 @@ do
             defines
             {
                 "BLT_PLATFORM_WINDOWS",
+                "BLT_BUILD_STATIC",
+                "_CRT_SECURE_NO_WARNINGS",
+            }
+
+        filter "system:linux"
+            systemversion "latest"
+
+            defines
+            {
+                "BLT_PLATFORM_LINUX",
                 "BLT_BUILD_STATIC",
                 "_CRT_SECURE_NO_WARNINGS",
             }
