@@ -1,0 +1,1 @@
+ssh -i C:/.aws/JordanNewSydney.pem ubuntu@13.210.164.248

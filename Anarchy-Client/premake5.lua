@@ -44,7 +44,7 @@ do
 
         links
         {
-            "Bolt-Core"
+            "Anarchy-ServerLib",
         }
 
         filter "system:windows"
@@ -64,7 +64,22 @@ do
             {
                 "BLT_PLATFORM_LINUX",
                 "BLT_BUILD_STATIC",
-                "_CRT_SECURE_NO_WARNINGS",
+            }
+
+            links
+            {
+                "Anarchy-Utils",
+                "Bolt-Core",
+                "GLFW",
+                "Glad",
+                "ImGui",
+                "Lua",
+                "FreeType-GL",
+                "FreeType",                          
+                "stdc++fs",
+                "dl",
+                "X11",
+                "pthread"
             }
 
         filter "configurations:Debug"

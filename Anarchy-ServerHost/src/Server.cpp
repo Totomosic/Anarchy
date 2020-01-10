@@ -4,6 +4,8 @@
 #include "Lib/Authentication.h"
 #include "ServerState.h"
 
+#include "Utils/Config.h"
+
 namespace Anarchy
 {
 
@@ -14,7 +16,7 @@ namespace Anarchy
 	{
 		Scene& gameScene = SceneManager::Get().AddScene();
 		Layer& gameLayer = gameScene.AddLayer();
-		SocketAddress address(127, 0, 0, 1, 10000);
+		SocketAddress address = LoadServerConfig();
 		ServerState::Get().Initialize(address, gameScene, gameLayer);
 	}
 

@@ -2,6 +2,8 @@
 #include "ServerConnection.h"
 #include "Events.h"
 
+#include "Engine/Networking/SocketUtil.h"
+
 namespace Anarchy
 {
 
@@ -34,34 +36,38 @@ namespace Anarchy
 
 	void ServerConnection::LaunchListenerThread()
 	{
-		int port = 10001;
-		int result = m_Socket.Bind(SocketAddress("localhost", port));
-		while (result != 0)
+		std::vector<uint32_t> addresses = SocketUtil::GetIP4Addresses();
+		if (addresses.size() > 0)
 		{
-			result = m_Socket.Bind(SocketAddress("localhost", ++port));
-		}
-		Task task = TaskManager::Run([this]()
+			int port = 10001;
+			int result = m_Socket.Bind(SocketAddress(addresses[0], port));
+			while (result != 0)
 			{
-				std::byte buffer[4096];
-				while (m_IsValid)
+				result = m_Socket.Bind(SocketAddress(addresses[0], ++port));
+			}
+			Task task = TaskManager::Run([this]()
 				{
-					SocketAddress from;
-					int received = m_Socket.RecvFrom(buffer, sizeof(buffer), &from);
-					if (received > 0)
+					std::byte buffer[4096];
+					while (m_IsValid)
 					{
-						InputMemoryStream stream(received);
-						memcpy(stream.GetBufferPtr(), buffer, received);
-						ServerMessageReceived e;
-						Deserialize(stream, e.Type);
-						e.Data = std::move(stream);
-						OnMessageReceived().Emit(std::move(e));
+						SocketAddress from;
+						int received = m_Socket.RecvFrom(buffer, sizeof(buffer), &from);
+						if (received > 0)
+						{
+							InputMemoryStream stream(received);
+							memcpy(stream.GetBufferPtr(), buffer, received);
+							ServerMessageReceived e;
+							Deserialize(stream, e.Type);
+							e.Data = std::move(stream);
+							OnMessageReceived().Emit(std::move(e));
+						}
+						else
+						{
+							break;
+						}
 					}
-					else
-					{
-						break;
-					}
-				}
-			});
+				});
+		}
 	}
 
 }
