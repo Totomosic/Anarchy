@@ -19,15 +19,12 @@ namespace Anarchy
 		EventBus m_Bus;
 		EventEmitter<ServerMessageReceived> m_OnMessage;
 
-		std::atomic<bool> m_IsValid;
-
 	public:
 		ServerConnection(const SocketAddress& address);
 		ServerConnection(const ServerConnection& other) = delete;
 		ServerConnection& operator=(const ServerConnection& other) = delete;
 		ServerConnection(ServerConnection&& other) = delete;
 		ServerConnection& operator=(ServerConnection&& other) = delete;
-		~ServerConnection();
 
 		const SocketAddress& GetAddress() const;
 		const UDPsocket& GetSocket() const;

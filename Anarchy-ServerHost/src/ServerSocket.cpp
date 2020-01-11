@@ -30,9 +30,9 @@ namespace Anarchy
 	void ServerSocket::Run()
 	{
 		m_Socket.Bind(m_Address);
-		Task listenerThread = TaskManager::Run([this]()
+		Task listenerThread = TaskManager::Get().Run([this]()
 			{
-				std::byte buffer[4096];
+				std::byte buffer[8192];
 				while (true)
 				{
 					SocketAddress from;

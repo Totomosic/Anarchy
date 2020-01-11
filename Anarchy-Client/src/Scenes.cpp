@@ -50,7 +50,7 @@ namespace Anarchy
 					response.ContinueWithOnMainThread([&gameScene, &connectingIcon](std::optional<ServerConnectionResponse> response)
 						{
 							connectingIcon.Remove();
-							if (response && response->Success)
+							if (response)
 							{
 								SceneManager::Get().SetCurrentScene(gameScene);
 							}
@@ -71,19 +71,18 @@ namespace Anarchy
 		scene.OnLoad().AddEventListener([&scene](Event<SceneLoadEvent>& e)
 			{
 				CreateCharacterRequest request;
-				request.ConnectionId = ClientState::Get().GetConnection().GetConnectionId();
 				std::optional<CreateCharacterResponse> character = ClientState::Get().GetConnection().CreateCharacter(request, 5.0).Result();
-				if (character && character->Success)
+				if (character)
 				{
 					Layer& layer = scene.AddLayer();
-					EntityHandle camera = layer.GetFactory().Camera(Matrix4f::Orthographic(0, 16, 0, 9, -100, 100));
+					EntityHandle camera = layer.GetFactory().Camera(Matrix4f::Orthographic(0, 32, 0, 18, -100, 100));
 					layer.SetActiveCamera(camera);
 
 					BLT_INFO("Created Character Successfully");
 					ClientState::Get().InitializeEntities(scene, layer);
 					EntityHandle player = ClientState::Get().GetEntities().CreateFromEntityData(character->Data);
 
-					std::optional<GetEntitiesResponse> entities = ClientState::Get().GetConnection().GetEntities({ ClientState::Get().GetConnection().GetConnectionId(), 0 }, 5.0).Result();
+					std::optional<GetEntitiesResponse> entities = ClientState::Get().GetConnection().GetEntities({ 0 }, 5.0).Result();
 					if (entities)
 					{
 						for (const EntityData& data : entities->Entities)

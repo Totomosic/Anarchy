@@ -44,19 +44,24 @@ namespace Anarchy
 	EntityHandle ServerEntityCollection::CreateFromEntityData(const EntityData& data, connid_t ownerConnectionId)
 	{
 		EntityHandle entity = EntityCollection::CreateFromEntityData(data);
-		entity.Assign<EntityOwner>(EntityOwner{ ownerConnectionId });
+		if (ownerConnectionId != InvalidConnectionId)
+		{
+			entity.Assign<EntityOwner>(EntityOwner{ ownerConnectionId });
+		}
 		return entity;
 	}
 
-	void ServerEntityCollection::RemoveAllOwnedBy(connid_t connectionId)
+	std::vector<entityid_t> ServerEntityCollection::GetAllIdsOwnedBy(connid_t connectionId) const
 	{
-		for (EntityHandle entity : m_GameLayer.Entities().GetEntitiesWith<EntityOwner>())
+		std::vector<entityid_t> result;
+		for (EntityHandle entity : m_GameLayer.Entities().GetEntitiesWith<EntityOwner, NetworkId>())
 		{
 			if (entity.GetComponent<EntityOwner>()->ConnectionId == connectionId)
 			{
-				entity.Destroy();
+				result.push_back(entity.GetComponent<NetworkId>()->Id);
 			}
 		}
+		return result;
 	}
 
 }

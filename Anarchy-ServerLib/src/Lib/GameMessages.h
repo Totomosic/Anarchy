@@ -13,18 +13,15 @@ namespace Anarchy
 	{
 	public:
 		static constexpr MessageType Type = MessageType::CreateCharacterRequest;
-	public:
-		connid_t ConnectionId;
+
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const CreateCharacterRequest& request)
 	{
-		Serialize(stream, request.ConnectionId);
 	}
 
 	inline void Deserialize(InputMemoryStream& stream, CreateCharacterRequest& request)
 	{
-		Deserialize(stream, request.ConnectionId);
 	}
 
 	struct CreateCharacterResponse
@@ -32,19 +29,16 @@ namespace Anarchy
 	public:
 		static constexpr MessageType Type = MessageType::CreateCharacterResponse;
 	public:
-		bool Success;
 		EntityData Data;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const CreateCharacterResponse& response)
 	{
-		Serialize(stream, response.Success);
 		Serialize(stream, response.Data);
 	}
 
 	inline void Deserialize(InputMemoryStream& stream, CreateCharacterResponse& response)
 	{
-		Deserialize(stream, response.Success);
 		Deserialize(stream, response.Data);
 	}
 
@@ -58,19 +52,16 @@ namespace Anarchy
 		static constexpr MessageType Type = MessageType::GetEntitiesRequest;
 
 	public:
-		connid_t ConnectionId;
-		int DimensionId;
+		int DimensionId = 0;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const GetEntitiesRequest& request)
 	{
-		Serialize(stream, request.ConnectionId);
 		Serialize(stream, request.DimensionId);
 	}
 
 	inline void Deserialize(InputMemoryStream& stream, GetEntitiesRequest& request)
 	{
-		Deserialize(stream, request.ConnectionId);
 		Deserialize(stream, request.DimensionId);
 	}
 
@@ -103,8 +94,8 @@ namespace Anarchy
 		static constexpr MessageType Type = MessageType::GetTilemapRequest;
 
 	public:
-		int DimensionId;
-		int HeightLevel;
+		int DimensionId = 0;
+		int HeightLevel = 0;
 		Vector2i CenterTile;
 		int Width;
 		int Height;
@@ -116,8 +107,76 @@ namespace Anarchy
 		static constexpr MessageType Type = MessageType::GetTilemapResponse;
 
 	public:
-		bool Success;
 		Tilemap Data;
 	};
+
+	// =======================================================================================
+	// SPAWN ENTITIES
+	// =======================================================================================
+
+	struct SpawnEntitiesRequest
+	{
+	public:
+		static constexpr MessageType Type = MessageType::SpawnEntities;
+
+	public:
+		std::vector<EntityData> Entities;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const SpawnEntitiesRequest& request)
+	{
+		Serialize(stream, request.Entities);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, SpawnEntitiesRequest& request)
+	{
+		Deserialize(stream, request.Entities);
+	}
+
+	// =======================================================================================
+	// DESTROY ENTITIES
+	// =======================================================================================
+
+	struct DestroyEntitiesRequest
+	{
+	public:
+		static constexpr MessageType Type = MessageType::DestroyEntities;
+
+	public:
+		std::vector<entityid_t> Entities;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const DestroyEntitiesRequest& request)
+	{
+		Serialize(stream, request.Entities);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, DestroyEntitiesRequest& request)
+	{
+		Deserialize(stream, request.Entities);
+	}
+
+	// =======================================================================================
+	// UPDATE ENTITIES
+	// =======================================================================================
+
+	struct UpdateEntitiesRequest
+	{
+	public:
+		static constexpr MessageType Type = MessageType::UpdateEntities;
+
+	public:
+		std::vector<EntityDelta> Updates;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const UpdateEntitiesRequest& request)
+	{
+		Serialize(stream, request.Updates);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, UpdateEntitiesRequest& request)
+	{
+		Deserialize(stream, request.Updates);
+	}
 
 }

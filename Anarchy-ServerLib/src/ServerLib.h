@@ -8,9 +8,57 @@
 namespace Anarchy
 {
 
+	using seqid_t = uint32_t;
 	using prefab_t = int;
 	using entityid_t = uint32_t;
 	using connid_t = uint16_t;
 	static constexpr connid_t InvalidConnectionId = (connid_t)-1;
+
+	template<typename T>
+	struct NetworkMessage
+	{
+	public:
+		seqid_t SequenceId;
+		T Message;
+	};
+
+	template<typename T>
+	inline void Serialize(OutputMemoryStream& stream, const NetworkMessage<T>& message)
+	{
+		Serialize(stream, message.SequenceId);
+		Serialize(stream, message.Message);
+	}
+
+	template<typename T>
+	inline void Deserialize(InputMemoryStream& stream, NetworkMessage<T>& message)
+	{
+		Deserialize(stream, message.SequenceId);
+		Deserialize(stream, message.Message);
+	}
+
+	template<typename T>
+	struct ServerNetworkMessage
+	{
+	public:
+		connid_t ConnectionId = InvalidConnectionId;
+		seqid_t SequenceId;
+		T Message;
+	};
+
+	template<typename T>
+	inline void Serialize(OutputMemoryStream& stream, const ServerNetworkMessage<T>& message)
+	{
+		Serialize(stream, message.ConnectionId);
+		Serialize(stream, message.SequenceId);
+		Serialize(stream, message.Message);
+	}
+
+	template<typename T>
+	inline void Deserialize(InputMemoryStream& stream, ServerNetworkMessage<T>& message)
+	{
+		Deserialize(stream, message.ConnectionId);
+		Deserialize(stream, message.SequenceId);
+		Deserialize(stream, message.Message);
+	}
 
 }

@@ -64,4 +64,19 @@ namespace Anarchy
 		}
 	}
 
+	template<typename T>
+	inline void Deserialize(InputMemoryStream& stream, std::optional<T>& value)
+	{
+		bool hasValue;
+		Deserialize(stream, hasValue);
+		if (hasValue)
+		{
+			T v;
+			Deserialize(stream, v);
+			value = v;
+			return;
+		}
+		value = {};
+	}
+
 }

@@ -9,7 +9,7 @@
 namespace Anarchy
 {
 
-	static constexpr int TARGET_TICK_RATE = 20;
+	static constexpr int TARGET_TICK_RATE = 5;
 	static const double TARGET_DELTA_TIME = 1.0 / TARGET_TICK_RATE;
 
 	void Server::Init()
@@ -34,6 +34,9 @@ namespace Anarchy
 			prevSleep = difference;
 			std::this_thread::sleep_for(std::chrono::nanoseconds((size_t)(difference * 1e9)));
 		}
+
+		UpdateEntitiesRequest request;
+		ServerState::Get().GetSocketApi().UpdateEntities(ServerState::Get().GetConnections().GetAllConnectionIds(), request);
 	}
 
 	void Server::Render()

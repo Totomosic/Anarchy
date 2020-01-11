@@ -44,6 +44,55 @@ namespace Anarchy
 		return result;
 	}
 
+	std::vector<const ClientConnection*> ConnectionsManager::GetConnections(const std::vector<connid_t>& connectionIds) const
+	{
+		std::vector<const ClientConnection*> result;
+		for (connid_t connectionId : connectionIds)
+		{
+			if (HasConnection(connectionId))
+			{
+				result.push_back(&GetConnection(connectionId));
+			}
+		}
+		return result;
+	}
+
+	std::vector<ClientConnection*> ConnectionsManager::GetConnections(const std::vector<connid_t>& connectionIds)
+	{
+		std::vector<ClientConnection*> result;
+		for (connid_t connectionId : connectionIds)
+		{
+			if (HasConnection(connectionId))
+			{
+				result.push_back(&GetConnection(connectionId));
+			}
+		}
+		return result;
+	}
+
+	std::vector<connid_t> ConnectionsManager::GetAllConnectionIds() const
+	{
+		std::vector<connid_t> result;
+		for (auto& pair : m_Connections)
+		{
+			result.push_back(pair.first);
+		}
+		return result;
+	}
+
+	std::vector<connid_t> ConnectionsManager::GetConnectionIdsExcept(connid_t connectionId) const
+	{
+		std::vector<connid_t> result;
+		for (auto& pair : m_Connections)
+		{
+			if (pair.first != connectionId)
+			{
+				result.push_back(pair.first);
+			}
+		}
+		return result;
+	}
+
 	ClientConnection& ConnectionsManager::AddConnection(const blt::string& username, const SocketAddress& address)
 	{
 		connid_t id = m_IdManager.GetNextId();

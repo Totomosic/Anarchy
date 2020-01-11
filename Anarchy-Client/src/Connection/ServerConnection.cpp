@@ -8,15 +8,11 @@ namespace Anarchy
 {
 
 	ServerConnection::ServerConnection(const SocketAddress& address)
-		: m_Address(address), m_Socket(), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>(ServerEvents::ServerMessageReceived)), m_IsValid(true)
+		: m_Address(address), m_Socket(), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>(ServerEvents::ServerMessageReceived))
 	{
 		m_Bus.SetImmediateMode(true);
+		m_Socket.Connect(m_Address);
 		LaunchListenerThread();
-	}
-
-	ServerConnection::~ServerConnection()
-	{
-		m_IsValid = false;
 	}
 
 	const SocketAddress& ServerConnection::GetAddress() const
@@ -36,38 +32,28 @@ namespace Anarchy
 
 	void ServerConnection::LaunchListenerThread()
 	{
-		std::vector<uint32_t> addresses = SocketUtil::GetIP4Addresses();
-		if (addresses.size() > 0)
-		{
-			int port = 10001;
-			int result = m_Socket.Bind(SocketAddress(addresses[0], port));
-			while (result != 0)
+		Task task = TaskManager::Get().Run([this]()
 			{
-				result = m_Socket.Bind(SocketAddress(addresses[0], ++port));
-			}
-			Task task = TaskManager::Run([this]()
+				std::byte buffer[8192];
+				while (true)
 				{
-					std::byte buffer[4096];
-					while (m_IsValid)
+					SocketAddress from;
+					int received = m_Socket.RecvFrom(buffer, sizeof(buffer), &from);
+					if (received > 0)
 					{
-						SocketAddress from;
-						int received = m_Socket.RecvFrom(buffer, sizeof(buffer), &from);
-						if (received > 0)
-						{
-							InputMemoryStream stream(received);
-							memcpy(stream.GetBufferPtr(), buffer, received);
-							ServerMessageReceived e;
-							Deserialize(stream, e.Type);
-							e.Data = std::move(stream);
-							OnMessageReceived().Emit(std::move(e));
-						}
-						else
-						{
-							break;
-						}
+						InputMemoryStream stream(received);
+						memcpy(stream.GetBufferPtr(), buffer, received);
+						ServerMessageReceived e;
+						Deserialize(stream, e.Type);
+						e.Data = std::move(stream);
+						OnMessageReceived().Emit(std::move(e));
 					}
-				});
-		}
+					else
+					{
+						break;
+					}
+				}
+			});
 	}
 
 }

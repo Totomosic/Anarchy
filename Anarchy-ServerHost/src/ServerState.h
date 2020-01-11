@@ -29,6 +29,8 @@ namespace Anarchy
 		ServerSocket& GetSocket();
 		const ConnectionsManager& GetConnections() const;
 		ConnectionsManager& GetConnections();
+		const ServerListener& GetSocketApi() const;
+		ServerListener& GetSocketApi();
 
 		const ServerEntityCollection& GetEntities() const;
 		ServerEntityCollection& GetEntities();

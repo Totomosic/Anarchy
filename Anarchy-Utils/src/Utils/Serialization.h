@@ -56,4 +56,14 @@ namespace Anarchy
 		}
 	}
 
+	template<typename T>
+	inline void Serialize(OutputMemoryStream& stream, const std::optional<T>& value)
+	{
+		Serialize(stream, value.has_value());
+		if (value.has_value())
+		{
+			Serialize(stream, value.value());
+		}
+	}
+
 }

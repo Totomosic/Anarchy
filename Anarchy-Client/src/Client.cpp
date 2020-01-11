@@ -36,7 +36,7 @@ namespace Anarchy
 		{
 			if (ClientState::Get().GetConnection().IsConnected())
 			{
-				ClientState::Get().GetConnection().Disconnect({ ClientState::Get().GetConnection().GetConnectionId() }, 5.0).Wait();
+				ClientState::Get().GetConnection().Disconnect({}, 5.0).Wait();
 			}
 			ClientState::Get().CloseConnection();
 		}

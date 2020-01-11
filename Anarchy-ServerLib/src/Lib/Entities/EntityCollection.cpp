@@ -81,6 +81,15 @@ namespace Anarchy
 		return entity;
 	}
 
+	void EntityCollection::RemoveEntity(entityid_t networkId)
+	{
+		if (m_EntityMap.find(networkId) != m_EntityMap.end())
+		{
+			m_EntityMap[networkId].Destroy();
+			m_EntityMap.erase(networkId);
+		}
+	}
+
 	Vector2i EntityCollection::GetEntityTilePosition(const EntityHandle& entity) const
 	{
 		Vector2f xy = entity.GetTransform()->Position().xy();

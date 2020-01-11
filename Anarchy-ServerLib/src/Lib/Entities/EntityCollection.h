@@ -35,6 +35,8 @@ namespace Anarchy
 		EntityHandle CreateEntity(entityid_t networkId, prefab_t prefabId);
 		EntityHandle CreateFromEntityData(const EntityData& data);
 
+		void RemoveEntity(entityid_t networkId);
+
 		Vector2i GetEntityTilePosition(const EntityHandle& entity) const;
 		EntityData GetDataFromEntity(const EntityHandle& entity) const;
 	};

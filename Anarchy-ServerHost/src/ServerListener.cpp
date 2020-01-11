@@ -29,55 +29,138 @@ namespace Anarchy
 			});
 	}
 
-	ServerConnectionResponse ServerListener::Connect(const ServerRequest<ServerConnectionRequest>& request)
+	std::optional<ServerConnectionResponse> ServerListener::Connect(const ServerRequest<ServerNetworkMessage<ServerConnectionRequest>>& request)
 	{
-		ClientConnection& connection = ServerState::Get().GetConnections().AddConnection(request.Request.Username, request.From);
-		ServerConnectionResponse response;
-		response.Success = true;
-		response.ConnectionId = connection.GetConnectionId();
-		BLT_INFO("Connection Request Received: Connecting as {0}, Id {1}", connection.GetUsername(), response.ConnectionId);
-		return response;
-	}
-
-	ServerDisconnectResponse ServerListener::Disconnect(const ServerRequest<ServerDisconnectRequest>& request)
-	{
-		bool success = ServerState::Get().GetConnections().RemoveConnection(request.Request.ConnectionId);
-		ServerState::Get().GetEntities().RemoveAllOwnedBy(request.Request.ConnectionId);
-		ServerDisconnectResponse response;
-		response.Success = success;
-		BLT_WARN("[{0}] Disconnect Request Received", request.Request.ConnectionId);
-		return response;
-	}
-
-	CreateCharacterResponse ServerListener::CreateCharacter(const ServerRequest<CreateCharacterRequest>& request)
-	{
-		CreateCharacterResponse response;
-		response.Success = false;
-		BLT_TRACE("[{0}] Create Character Request Received", request.Request.ConnectionId);
-		if (ServerState::Get().GetConnections().HasConnection(request.Request.ConnectionId))
+		BLT_INFO("[SequenceId={0}] Connection Request Received", request.Request.SequenceId);
+		if (request.Request.SequenceId == 0 && request.Request.ConnectionId == InvalidConnectionId)
 		{
+			ClientConnection& connection = ServerState::Get().GetConnections().AddConnection(request.Request.Message.Username, request.From);
+			connection.SetSequenceId(request.Request.SequenceId);
+			BLT_INFO("[ConnectionId={0}] [SequenceId={1}] Sending Connection Response", connection.GetConnectionId(), connection.GetSequenceId());
+			ServerConnectionResponse response;
+			response.ConnectionId = connection.GetConnectionId();
+			return response;
+		}
+		return {};
+	}
+
+	std::optional<ServerDisconnectResponse> ServerListener::Disconnect(const ServerRequest<ServerNetworkMessage<ServerDisconnectRequest>>& request)
+	{
+		BLT_WARN("[ConnectionId={0}] [SequenceId={1}] Disconnect Request Received", request.Request.ConnectionId, request.Request.SequenceId);
+		if (ServerState::Get().GetConnections().RemoveConnection(request.Request.ConnectionId))
+		{
+			DestroyEntitiesRequest destroyRequest;
+			destroyRequest.Entities = ServerState::Get().GetEntities().GetAllIdsOwnedBy(request.Request.ConnectionId);
+			DestroyEntities(ServerState::Get().GetConnections().GetConnectionIdsExcept(request.Request.ConnectionId), destroyRequest);
+			BLT_INFO("[ConnectionId={0}] Sending Disconnect Response", request.Request.ConnectionId);
+			ServerDisconnectResponse response;
+			return response;
+		}
+		return {};
+	}
+
+	std::optional<CreateCharacterResponse> ServerListener::CreateCharacter(const ServerRequest<ServerNetworkMessage<CreateCharacterRequest>>& request)
+	{
+		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Create Character Request Received", request.Request.ConnectionId, request.Request.SequenceId);
+		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
+		if (connection != nullptr)
+		{
+			CreateCharacterResponse response;
 			response.Data.NetworkId = ServerState::Get().GetEntities().GetNextEntityId();
 			response.Data.Level = 1;
 			response.Data.PrefabId = 0;
 			response.Data.DimensionId = 0;
-			response.Data.TilePosition = { Random::NextInt(0, 16), Random::NextInt(0, 9) };
+			response.Data.TilePosition = { Random::NextInt(0, 32), Random::NextInt(0, 18) };
 
-			EntityHandle entity = ServerState::Get().GetEntities().CreateFromEntityData(response.Data, request.Request.ConnectionId);
+			SpawnEntitiesRequest spawnRequest;
+			spawnRequest.Entities.push_back(response.Data);
+			SpawnEntities(ServerState::Get().GetConnections().GetConnectionIdsExcept(request.Request.ConnectionId), spawnRequest, request.Request.ConnectionId);
 
-			response.Success = true;
+			connection->SetSequenceId(request.Request.SequenceId);
+			BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Create Character Response", request.Request.ConnectionId, connection->GetSequenceId());
+			return response;
 		}
-		return response;
+		return {};
 	}
 
-	GetEntitiesResponse ServerListener::GetEntities(const ServerRequest<GetEntitiesRequest>& request)
+	std::optional<GetEntitiesResponse> ServerListener::GetEntities(const ServerRequest<ServerNetworkMessage<GetEntitiesRequest>>& request)
 	{
-		BLT_TRACE("[{0}] Get Entities Request Received", request.Request.ConnectionId);
-		GetEntitiesResponse response;
-		for (EntityHandle entity : ServerState::Get().GetEntities().GetAllEntities())
+		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Get Entities Request Received", request.Request.ConnectionId, request.Request.SequenceId);
+		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
+		if (connection != nullptr)
 		{
-			response.Entities.push_back(ServerState::Get().GetEntities().GetDataFromEntity(entity));
+			connection->SetSequenceId(request.Request.SequenceId);
+			BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Get Entities Response", request.Request.ConnectionId, connection->GetSequenceId());
+			GetEntitiesResponse response;
+			for (EntityHandle entity : ServerState::Get().GetEntities().GetAllEntities())
+			{
+				response.Entities.push_back(ServerState::Get().GetEntities().GetDataFromEntity(entity));
+			}
+			return response;
 		}
-		return response;
+		return {};
+	}
+
+	void ServerListener::SpawnEntities(const std::vector<connid_t>& connections, const SpawnEntitiesRequest& request, connid_t ownerConnectionId)
+	{
+		for (const EntityData& entity : request.Entities)
+		{
+			EntityHandle e = ServerState::Get().GetEntities().CreateFromEntityData(entity, ownerConnectionId);
+		}
+		for (ClientConnection* connection : ServerState::Get().GetConnections().GetConnections(connections))
+		{
+			connection->SetSequenceId(connection->GetSequenceId());
+			BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Spawn Entities Request", connection->GetConnectionId(), connection->GetSequenceId());
+			GetSocket().SendPacket(connection->GetAddress(), SpawnEntitiesRequest::Type, CreateMessage(connection->GetConnectionId(), request));
+		}
+	}
+
+	void ServerListener::DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request)
+	{
+		for (entityid_t id : request.Entities)
+		{
+			ServerState::Get().GetEntities().RemoveEntity(id);
+		}
+		for (ClientConnection* connection : ServerState::Get().GetConnections().GetConnections(connections))
+		{
+			connection->SetSequenceId(connection->GetSequenceId());
+			BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Destroy Entities Request", connection->GetConnectionId(), connection->GetSequenceId());
+			GetSocket().SendPacket(connection->GetAddress(), DestroyEntitiesRequest::Type, CreateMessage(connection->GetConnectionId(), request));
+		}
+	}
+
+	void ServerListener::UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request)
+	{
+		for (ClientConnection* connection : ServerState::Get().GetConnections().GetConnections(connections))
+		{
+			connection->SetSequenceId(connection->GetSequenceId());
+			BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Update Entities Request", connection->GetConnectionId(), connection->GetSequenceId());
+			GetSocket().SendPacket(connection->GetAddress(), UpdateEntitiesRequest::Type, CreateMessage(connection->GetConnectionId(), request));
+		}
+	}
+
+	ClientConnection* ServerListener::GetConnection(connid_t connectionId) const
+	{
+		if (ServerState::Get().GetConnections().HasConnection(connectionId))
+		{
+			return &ServerState::Get().GetConnections().GetConnection(connectionId);
+		}
+		return nullptr;
+	}
+
+	seqid_t ServerListener::GetSequenceId(connid_t connectionId) const
+	{
+		ClientConnection* connection = GetConnection(connectionId);
+		if (connection != nullptr)
+		{
+			return connection->GetSequenceId();
+		}
+		return 0;
+	}
+
+	ServerSocket& ServerListener::GetSocket() const
+	{
+		return ServerState::Get().GetSocket();
 	}
 
 }

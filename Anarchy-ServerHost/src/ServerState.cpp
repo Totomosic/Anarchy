@@ -44,6 +44,16 @@ namespace Anarchy
 		return m_Connections;
 	}
 
+	const ServerListener& ServerState::GetSocketApi() const
+	{
+		return *m_Listener;
+	}
+
+	ServerListener& ServerState::GetSocketApi()
+	{
+		return *m_Listener;
+	}
+
 	const ServerEntityCollection& ServerState::GetEntities() const
 	{
 		return *m_Entities;
