@@ -1,6 +1,7 @@
 #pragma once
 #include "Authentication.h"
 #include "GameMessages.h"
+#include "Entities/EntityCommands.h"
 #include "Core/Tasks/Task.h"
 
 namespace Anarchy
@@ -26,6 +27,8 @@ namespace Anarchy
 		virtual void SpawnEntities(const std::vector<connid_t>& connections, const SpawnEntitiesRequest& request, connid_t ownerConnectionId) = 0;
 		virtual void DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request) = 0;
 		virtual void UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request) = 0;
+
+		virtual void OnMoveCommand(const EntityMoveCommand& command) = 0;
 	};
 
 	class ClientSocketApi
@@ -44,6 +47,8 @@ namespace Anarchy
 		virtual void SpawnEntities(const NetworkMessage<SpawnEntitiesRequest>& request) = 0;
 		virtual void DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request) = 0;
 		virtual void UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request) = 0;
+
+		virtual void SendMoveCommand(const EntityMoveCommand& command) = 0;
 	};
 
 }

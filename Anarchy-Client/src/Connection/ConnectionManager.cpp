@@ -129,4 +129,8 @@ namespace Anarchy
 		BLT_INFO("Updating...");
 	}
 
+	void ConnectionManager::SendMoveCommand(const EntityMoveCommand& command)
+	{
+	}
+
 }

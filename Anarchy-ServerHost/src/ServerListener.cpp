@@ -139,6 +139,10 @@ namespace Anarchy
 		}
 	}
 
+	void ServerListener::OnMoveCommand(const EntityMoveCommand& command)
+	{
+	}
+
 	ClientConnection* ServerListener::GetConnection(connid_t connectionId) const
 	{
 		if (ServerState::Get().GetConnections().HasConnection(connectionId))

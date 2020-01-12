@@ -56,6 +56,8 @@ namespace Anarchy
 		void DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request) override;
 		void UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request) override;
 
+		void OnMoveCommand(const EntityMoveCommand& command) override;
+
 	private:
 		template<typename T>
 		std::optional<NetworkMessage<T>> CreateOptionalMessage(connid_t connectionId, const std::optional<T>& data)

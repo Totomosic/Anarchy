@@ -18,12 +18,12 @@ namespace Anarchy
 
 		GetEntitiesRequest,
 		GetEntitiesResponse,
-		GetTilemapRequest,
-		GetTilemapResponse,
 
 		SpawnEntities,
 		DestroyEntities,
-		UpdateEntities
+		UpdateEntities,
+
+		EntityMoveCommand
 	};
 
 	ANCH_DEFINE_DEFAULT_SERIALIZE(MessageType);

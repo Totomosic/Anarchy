@@ -85,32 +85,6 @@ namespace Anarchy
 	}
 
 	// =======================================================================================
-	// GET TILEMAP
-	// =======================================================================================
-
-	struct GetTilemapRequest
-	{
-	public:
-		static constexpr MessageType Type = MessageType::GetTilemapRequest;
-
-	public:
-		int DimensionId = 0;
-		int HeightLevel = 0;
-		Vector2i CenterTile;
-		int Width;
-		int Height;
-	};
-
-	struct GetTilemapResponse
-	{
-	public:
-		static constexpr MessageType Type = MessageType::GetTilemapResponse;
-
-	public:
-		Tilemap Data;
-	};
-
-	// =======================================================================================
 	// SPAWN ENTITIES
 	// =======================================================================================
 

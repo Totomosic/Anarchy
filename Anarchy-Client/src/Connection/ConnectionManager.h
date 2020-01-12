@@ -43,6 +43,8 @@ namespace Anarchy
 		void DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request) override;
 		void UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request) override;
 
+		void SendMoveCommand(const EntityMoveCommand& command) override;
+
 		template<typename TRequest>
 		void Register(const std::function<void(const NetworkMessage<TRequest>&)>& callback)
 		{

@@ -62,34 +62,4 @@ namespace Anarchy
 		Deserialize(stream, value.TilePosition);
 	}
 
-	// =======================================================================================
-	// TILEMAP
-	// =======================================================================================
-
-	enum class TileType : uint8_t
-	{
-		None,
-		Grass,
-		Water
-	};
-
-	ANCH_DEFINE_DEFAULT_SERIALIZE(TileType);
-	ANCH_DEFINE_DEFAULT_DESERIALIZE(TileType);
-
-	struct Tilemap
-	{
-	public:
-		std::vector<TileType> Tiles;
-	};
-
-	inline void Serialize(OutputMemoryStream& stream, const Tilemap& value)
-	{
-		Serialize(stream, value.Tiles);
-	}
-
-	inline void Deserialize(InputMemoryStream& stream, Tilemap& value)
-	{
-		Deserialize(stream, value.Tiles);
-	}
-
 }
