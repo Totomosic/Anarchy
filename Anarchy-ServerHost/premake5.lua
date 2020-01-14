@@ -35,7 +35,7 @@ do
             BoltInstallDir .. "%{IncludeDirs.FreeTypeGL}",
             BoltInstallDir .. "%{IncludeDirs.FreeType}",
             BoltInstallDir .. "%{IncludeDirs.Lua}",
-            BoltInstallDir .. "%{IncludeDirs.Python}",
+            BoltInstallDir .. "%{IncludeDirs.BoltLib}",
             BoltInstallDir .. "%{IncludeDirs.Bolt}",
             "../%{IncludeDirs.AnarchyUtils}",
             "../%{IncludeDirs.AnarchyServerLib}",
@@ -64,13 +64,13 @@ do
             {
                 "BLT_PLATFORM_LINUX",
                 "BLT_BUILD_STATIC",
-                "_CRT_SECURE_NO_WARNINGS",
             }
 
             links
             {
                 "Anarchy-Utils",
                 "Bolt-Core",
+                "BoltLib",
                 "GLFW",
                 "Glad",
                 "ImGui",

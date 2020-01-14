@@ -93,7 +93,7 @@ namespace Anarchy
 		return result;
 	}
 
-	ClientConnection& ConnectionsManager::AddConnection(const blt::string& username, const SocketAddress& address)
+	ClientConnection& ConnectionsManager::AddConnection(const std::string& username, const SocketAddress& address)
 	{
 		connid_t id = m_IdManager.GetNextId();
 		m_Connections[id] = ClientConnection(username, id, address);

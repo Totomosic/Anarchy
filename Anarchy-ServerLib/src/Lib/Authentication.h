@@ -13,7 +13,7 @@ namespace Anarchy
 	public:
 		static constexpr MessageType Type = MessageType::ConnectRequest;
 	public:
-		blt::string Username;
+		std::string Username;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const ServerConnectionRequest& value)

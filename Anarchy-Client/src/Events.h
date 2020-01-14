@@ -13,8 +13,8 @@ namespace Anarchy
 	struct ConnectToServerEvent
 	{
 	public:
-		blt::string Username;
-		blt::string Server;
+		std::string Username;
+		std::string Server;
 	};
 
 	struct ClientEvents

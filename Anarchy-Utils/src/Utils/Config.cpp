@@ -4,19 +4,19 @@
 namespace Anarchy
 {
 
-	std::unordered_map<blt::string, blt::string> LoadConfigFile(const blt::string& filepath)
+	std::unordered_map<std::string, std::string> LoadConfigFile(const std::string& filepath)
 	{
 		File f = Filesystem::Open(filepath, OpenMode::Read);
-		blt::string data = f.ReadText();
-		std::vector<blt::string> lines = data.split('\n');
+		std::string data = f.ReadText();
+		std::vector<std::string> lines = blt::split(data, '\n');
 
-		std::unordered_map<blt::string, blt::string> result;
+		std::unordered_map<std::string, std::string> result;
 
-		for (blt::string& line : lines)
+		for (std::string& line : lines)
 		{
-			line.remove_all(" \t\r\n");
+			blt::remove_all(line, " \t\r\n");
 			uint32_t equals = line.find('=');
-			if (equals != blt::string::npos)
+			if (equals != std::string::npos)
 			{
 				result[line.substr(0, equals)] = line.substr(equals + 1);
 			}
@@ -24,7 +24,7 @@ namespace Anarchy
 		return result;
 	}
 
-	SocketAddress LoadServerConfig(const blt::string& filepath)
+	SocketAddress LoadServerConfig(const std::string& filepath)
 	{
 		auto config = LoadConfigFile(filepath);
 		return SocketAddress(config["Address"], config["Port"]);

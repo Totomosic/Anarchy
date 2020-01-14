@@ -8,12 +8,12 @@ namespace Anarchy
 	{
 	}
 
-	ClientConnection::ClientConnection(const blt::string& username, connid_t connectionId, const SocketAddress& address)
+	ClientConnection::ClientConnection(const std::string& username, connid_t connectionId, const SocketAddress& address)
 		: m_Username(username), m_ConnectionId(connectionId), m_Address(address), m_SequenceId()
 	{
 	}
 
-	const blt::string& ClientConnection::GetUsername() const
+	const std::string& ClientConnection::GetUsername() const
 	{
 		return m_Username;
 	}

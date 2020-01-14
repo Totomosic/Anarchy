@@ -25,7 +25,7 @@ namespace Anarchy
 		std::vector<connid_t> GetAllConnectionIds() const;
 		std::vector<connid_t> GetConnectionIdsExcept(connid_t connectionId) const;
 
-		ClientConnection& AddConnection(const blt::string& username, const SocketAddress& address);
+		ClientConnection& AddConnection(const std::string& username, const SocketAddress& address);
 		bool RemoveConnection(connid_t id);
 	};
 

@@ -37,7 +37,7 @@ namespace Anarchy
 
 	ANCH_DEFINE_DEFAULT_DESERIALIZE(SocketAddress);
 
-	inline void Deserialize(InputMemoryStream& stream, blt::string& value)
+	inline void Deserialize(InputMemoryStream& stream, std::string& value)
 	{
 		size_t length;
 		Deserialize(stream, length);
@@ -47,7 +47,7 @@ namespace Anarchy
 		{
 			char c;
 			Deserialize(stream, c);
-			value.append(c);
+			value += c;
 		}
 	}
 

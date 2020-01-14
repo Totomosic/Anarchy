@@ -37,7 +37,7 @@ namespace Anarchy
 	
 	ANCH_DEFINE_DEFAULT_SERIALIZE(SocketAddress);
 
-	inline void Serialize(OutputMemoryStream& stream, const blt::string& value)
+	inline void Serialize(OutputMemoryStream& stream, const std::string& value)
 	{
 		Serialize(stream, (size_t)value.size());
 		for (char c : value)

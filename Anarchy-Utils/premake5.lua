@@ -32,7 +32,7 @@ do
             BoltInstallDir .. "%{IncludeDirs.FreeTypeGL}",
             BoltInstallDir .. "%{IncludeDirs.FreeType}",
             BoltInstallDir .. "%{IncludeDirs.Lua}",
-            BoltInstallDir .. "%{IncludeDirs.Python}",
+            BoltInstallDir .. "%{IncludeDirs.BoltLib}",
             BoltInstallDir .. "%{IncludeDirs.Bolt}",
             "src"
         }

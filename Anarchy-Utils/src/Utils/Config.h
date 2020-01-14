@@ -4,6 +4,6 @@
 namespace Anarchy
 {
 
-	SocketAddress LoadServerConfig(const blt::string& filepath = "./Config/ServerHostInfo.cfg");
+	SocketAddress LoadServerConfig(const std::string& filepath = "./Config/ServerHostInfo.cfg");
 
 }

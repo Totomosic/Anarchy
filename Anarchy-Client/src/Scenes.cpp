@@ -36,8 +36,8 @@ namespace Anarchy
 					data.Server = serverInput.GetText();
 
 					size_t colon = data.Server.rfind(':');
-					blt::string host = data.Server.substr(0, colon);
-					blt::string port = data.Server.substr(colon + 1);
+					std::string host = data.Server.substr(0, colon);
+					std::string port = data.Server.substr(colon + 1);
 					SocketAddress address(host, port);
 					ClientState::Get().InitializeConnection(address);
 
