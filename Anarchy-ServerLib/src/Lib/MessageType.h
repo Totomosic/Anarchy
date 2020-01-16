@@ -7,6 +7,8 @@ namespace Anarchy
 	enum class MessageType : uint16_t
 	{
 		None,
+		KeepAlive,
+
 		ConnectRequest,
 		ConnectResponse,
 		DisconnectRequest,

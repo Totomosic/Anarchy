@@ -21,6 +21,7 @@ namespace Anarchy
 	{
 	public:
 		static constexpr uint32_t ConnectToServer = Bolt::Events::MIN_USER_ID + 100;
+		static constexpr uint32_t DisconnectedFromServer = Bolt::Events::MIN_USER_ID + 101;
 	};
 
 }

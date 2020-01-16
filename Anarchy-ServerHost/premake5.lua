@@ -36,6 +36,7 @@ do
             BoltInstallDir .. "%{IncludeDirs.FreeType}",
             BoltInstallDir .. "%{IncludeDirs.Lua}",
             BoltInstallDir .. "%{IncludeDirs.BoltLib}",
+            BoltInstallDir .. "%{IncludeDirs.ResourcesLib}",
             BoltInstallDir .. "%{IncludeDirs.Bolt}",
             "../%{IncludeDirs.AnarchyUtils}",
             "../%{IncludeDirs.AnarchyServerLib}",
@@ -70,6 +71,7 @@ do
             {
                 "Anarchy-Utils",
                 "Bolt-Core",
+                "ResourcesLib",
                 "BoltLib",
                 "GLFW",
                 "Glad",

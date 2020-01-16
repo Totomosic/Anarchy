@@ -6,6 +6,32 @@ namespace Anarchy
 {
 
 	// =======================================================================================
+	// KEEP ALIVE
+	// =======================================================================================
+
+	struct KeepAlivePacket
+	{
+	public:
+		static constexpr MessageType Type = MessageType::KeepAlive;
+
+	public:
+		seqid_t AckSeqId;
+		uint32_t AckBitset;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const KeepAlivePacket& request)
+	{
+		Serialize(stream, request.AckSeqId);
+		Serialize(stream, request.AckBitset);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, KeepAlivePacket& request)
+	{
+		Deserialize(stream, request.AckSeqId);
+		Deserialize(stream, request.AckBitset);
+	}
+
+	// =======================================================================================
 	// CREATE CHARACTER
 	// =======================================================================================
 

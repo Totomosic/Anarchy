@@ -27,7 +27,7 @@ namespace Anarchy
 
 		UIRectangle& connectButton = background.CreateRectangle(300, 50, Color(50, 200, 50), Transform({ 0, -60, 1 }));
 		connectButton.CreateText("Connect", displayFont, Color::Black, Transform({ 0, 0, 1 }));
-		connectButton.Events().OnClick().AddEventListener([&background, &serverInput, &gameScene](Event<UI<MouseClickEvent>>& e)
+		connectButton.Events().OnClick().AddEventListener([&background, &serverInput, &gameScene, &scene](Event<UI<MouseClickEvent>>& e)
 			{
 				if (!ClientState::Get().HasConnection() || (!ClientState::Get().GetConnection().IsConnected() && !ClientState::Get().GetConnection().IsConnecting()))
 				{
@@ -40,13 +40,18 @@ namespace Anarchy
 					std::string port = data.Server.substr(colon + 1);
 					SocketAddress address(host, port);
 					ClientState::Get().InitializeConnection(address);
+					ClientState::Get().GetConnection().OnDisconnect().AddEventListener([&scene](Event<ServerDisconnect>& e)
+						{
+							SceneManager::Get().SetCurrentScene(scene);
+							e.StopPropagation();
+						});
 
 					ServerConnectionRequest request;
 					request.Username = data.Username;
 
 					UIRectangle& connectingIcon = background.CreateRectangle(30, 30, Color::Red, Transform({ 170, -60, 1 }));
 
-					Task<std::optional<ServerConnectionResponse>> response = ClientState::Get().GetConnection().Connect(request, 5.0);
+					Task<std::optional<ServerConnectionResponse>> response = ClientState::Get().GetConnection().Connect(request, 2.0);
 					response.ContinueWithOnMainThread([&gameScene, &connectingIcon](std::optional<ServerConnectionResponse> response)
 						{
 							connectingIcon.Remove();
@@ -97,6 +102,7 @@ namespace Anarchy
 			});
 		scene.OnUnload().AddEventListener([&scene](Event<SceneUnloadEvent>& e)
 			{
+				ClientState::Get().DestroyEntities();
 				scene.Clear();
 			});
 	}

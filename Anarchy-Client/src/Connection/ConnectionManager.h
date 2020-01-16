@@ -5,6 +5,11 @@
 namespace Anarchy
 {
 
+	struct ServerDisconnect
+	{
+
+	};
+
 	class ConnectionManager : public ClientSocketApi
 	{
 	public:
@@ -13,14 +18,20 @@ namespace Anarchy
 	private:
 		EventBus m_Bus;
 		TaskManager m_TaskManager;
+		EventEmitter<ServerDisconnect> m_OnDisconnect;
 
 		ServerConnection m_Connection;
 		connid_t m_ConnectionId;
 		bool m_Connecting;
+
 		seqid_t m_SequenceId;
+		seqid_t m_RemoteSequenceId;
 
 		ScopedEventListener m_Listener;
 		std::unordered_map<MessageType, std::function<void(InputMemoryStream&)>> m_MessageHandlers;
+
+		double m_TimeSinceKeepAlive;
+		double m_TimeSinceLastReceivedMessage;
 
 	public:
 		ConnectionManager(const SocketAddress& address);
@@ -32,6 +43,15 @@ namespace Anarchy
 		ServerConnection& GetServerSocket();
 
 		connid_t GetConnectionId() const;
+		seqid_t GetSequenceId() const;
+		seqid_t GetRemoteSequenceId() const;
+		EventEmitter<ServerDisconnect>& OnDisconnect();
+
+		void Update(TimeDelta delta);
+
+		void SendKeepAlive() override;
+		void OnKeepAlive(const NetworkMessage<KeepAlivePacket>& message) override;
+		void OnForceDisconnect(const NetworkMessage<ForceDisconnectMessage>& message);
 
 		Promise<ServerConnectionResponse> Connect(const ServerConnectionRequest& request, double timeoutSeconds = IgnoreTimeout) override;
 		Promise<ServerDisconnectResponse> Disconnect(const ServerDisconnectRequest& request, double timeoutSeconds = IgnoreTimeout) override;
@@ -43,7 +63,7 @@ namespace Anarchy
 		void DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request) override;
 		void UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request) override;
 
-		void SendMoveCommand(const EntityMoveCommand& command) override;
+		void SendMoveCommand(const EntityCommand<TileMovement>& command) override;
 
 		template<typename TRequest>
 		void Register(const std::function<void(const NetworkMessage<TRequest>&)>& callback)
@@ -62,20 +82,36 @@ namespace Anarchy
 		}
 		
 	private:
+		void DisconnectInternal();
+
+		void IncrementSequenceId(seqid_t amount = 1);
+		void SetRemoteSequenceId(seqid_t seqId);
+		void ResetTimeSinceLastReceivedMessage();
+
 		template<typename T>
 		ServerNetworkMessage<T> CreateMessage(const T& data)
 		{
 			ServerNetworkMessage<T> message;
 			message.ConnectionId = GetConnectionId();
 			message.Message = data;
-			message.SequenceId = m_SequenceId++;
+			message.SequenceId = GetSequenceId();
 			return message;
 		}
 
-		template<typename TResponse, typename TRequest>
-		std::optional<TResponse> AwaitResponse(const ServerNetworkMessage<TRequest>& request, double timeoutSeconds)
+		template<typename T>
+		std::optional<T> MakeOptional(const std::optional<NetworkMessage<T>>& message)
 		{
-			std::promise<std::optional<TResponse>> promise;
+			if (message)
+			{
+				return std::optional<T>(message->Message);
+			}
+			return std::optional<T>();
+		}
+
+		template<typename TResponse, typename TRequest>
+		std::optional<NetworkMessage<TResponse>> AwaitResponse(const ServerNetworkMessage<TRequest>& request, double timeoutSeconds)
+		{
+			std::promise<std::optional<NetworkMessage<TResponse>>> promise;
 			ScopedEventListener listener = GetServerSocket().OnMessageReceived().AddScopedEventListener([&promise](Event<ServerMessageReceived>& e)
 				{
 					if (e.Data.Type == TResponse::Type)
@@ -84,7 +120,7 @@ namespace Anarchy
 						Deserialize(e.Data.Data, response);
 						if (response.has_value())
 						{
-							promise.set_value(std::move(response->Message));
+							promise.set_value(std::move(response));
 						}
 						else
 						{
@@ -92,18 +128,18 @@ namespace Anarchy
 						}
 					}
 				});
-			std::future<std::optional<TResponse>> future = promise.get_future();
+			std::future<std::optional<NetworkMessage<TResponse>>> future = promise.get_future();
 			GetServerSocket().SendPacket(TRequest::Type, request);
 			if (timeoutSeconds == IgnoreTimeout)
 			{
-				std::optional<TResponse> value = future.get();
+				std::optional<NetworkMessage<TResponse>> value = future.get();
 				return value;
 			}
 			BLT_ASSERT(timeoutSeconds > 0.0, "Invalid timeout");
 			std::future_status status = future.wait_for(std::chrono::nanoseconds((size_t)(timeoutSeconds * 1e9)));
 			if (status == std::future_status::ready)
 			{
-				std::optional<TResponse> value = future.get();
+				std::optional<NetworkMessage<TResponse>> value = future.get();
 				return value;
 			}
 			return {};

@@ -1,6 +1,7 @@
 #pragma once
 #include "serverpch.h"
 #include "ServerSocket.h"
+#include "Engine/Application.h"
 
 namespace Anarchy
 {

@@ -1,5 +1,6 @@
 #pragma once
 #include "ClientConnection.h"
+#include "Core/Events/IdManager.h"
 
 namespace Anarchy
 {

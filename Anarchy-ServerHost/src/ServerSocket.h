@@ -2,6 +2,8 @@
 #include "serverpch.h"
 #include "ServerLib.h"
 #include "Events.h"
+#include "Core/Events/EventEmitter.h"
+#include "Core/Events/EventBus.h"
 
 namespace Anarchy
 {

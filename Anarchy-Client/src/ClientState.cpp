@@ -70,4 +70,9 @@ namespace Anarchy
 		return *m_Entities;
 	}
 
+	void ClientState::DestroyEntities()
+	{
+		m_Entities = nullptr;
+	}
+
 }

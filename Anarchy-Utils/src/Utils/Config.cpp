@@ -15,7 +15,7 @@ namespace Anarchy
 		for (std::string& line : lines)
 		{
 			blt::remove_all(line, " \t\r\n");
-			uint32_t equals = line.find('=');
+			size_t equals = line.find('=');
 			if (equals != std::string::npos)
 			{
 				result[line.substr(0, equals)] = line.substr(equals + 1);

@@ -32,6 +32,7 @@ namespace Anarchy
 		bool HasEntities() const;
 		const ClientEntityCollection& GetEntities() const;
 		ClientEntityCollection& GetEntities();
+		void DestroyEntities();
 
 	};
 

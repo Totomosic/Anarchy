@@ -1,6 +1,7 @@
 #pragma once
 #include "serverpch.h"
 #include "ServerLib.h"
+#include "Core/Time/TimeDelta.h"
 
 namespace Anarchy
 {
@@ -12,6 +13,10 @@ namespace Anarchy
 		connid_t m_ConnectionId;
 		SocketAddress m_Address;
 		seqid_t m_SequenceId;
+		seqid_t m_RemoteSequenceId;
+
+		double m_MillisecondsSinceReceivedPacket;
+		double m_MillisecondsSinceSentPacket;
 
 	public:
 		ClientConnection();
@@ -22,6 +27,17 @@ namespace Anarchy
 		const SocketAddress& GetAddress() const;
 		seqid_t GetSequenceId() const;
 		void SetSequenceId(seqid_t sequenceId);
+		void IncrementSequenceId(seqid_t amount = 1);
+		seqid_t GetRemoteSequenceId() const;
+		void SetRemoteSequenceId(seqid_t sequenceId);
+
+		uint32_t GetTimeSinceLastPacket() const;
+		void ResetTimeSinceLastPacket();
+		void UpdateTimeSinceLastPacket(TimeDelta delta);
+
+		uint32_t GetTimeSinceLastSentPacket() const;
+		void ResetTimeSinceLastSentPacket();
+		void UpdateTimeSinceLastSentPacket(TimeDelta delta);
 
 	};
 

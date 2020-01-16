@@ -35,8 +35,10 @@ namespace Anarchy
 			std::this_thread::sleep_for(std::chrono::nanoseconds((size_t)(difference * 1e9)));
 		}
 
+		ServerState::Get().GetSocketApi().Update(Time::Get().RenderingTimeline().DeltaTime());
+
 		UpdateEntitiesRequest request;
-		ServerState::Get().GetSocketApi().UpdateEntities(ServerState::Get().GetConnections().GetAllConnectionIds(), request);
+		//ServerState::Get().GetSocketApi().UpdateEntities(ServerState::Get().GetConnections().GetAllConnectionIds(), request);
 	}
 
 	void Server::Render()

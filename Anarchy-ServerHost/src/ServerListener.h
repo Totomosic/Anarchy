@@ -46,6 +46,12 @@ namespace Anarchy
 			};
 		}
 
+		void Update(TimeDelta delta);
+
+		void OnKeepAlive(const ServerRequest<ServerNetworkMessage<KeepAlivePacket>>& packet) override;
+		void SendKeepAlive(const std::vector<connid_t>& connections) override;
+		void ForceDisconnectConnections(const std::vector<connid_t>& connectionIds) override;
+
 		std::optional<ServerConnectionResponse> Connect(const ServerRequest<ServerNetworkMessage<ServerConnectionRequest>>& request) override;
 		std::optional<ServerDisconnectResponse> Disconnect(const ServerRequest<ServerNetworkMessage<ServerDisconnectRequest>>& request) override;
 
@@ -56,7 +62,7 @@ namespace Anarchy
 		void DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request) override;
 		void UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request) override;
 
-		void OnMoveCommand(const EntityMoveCommand& command) override;
+		void OnMoveCommand(const ServerNetworkMessage<EntityCommand<TileMovement>>& command) override;
 
 	private:
 		template<typename T>
@@ -84,6 +90,8 @@ namespace Anarchy
 		ClientConnection* GetConnection(connid_t connectionId) const;
 		seqid_t GetSequenceId(connid_t connectionId) const;
 		ServerSocket& GetSocket() const;
+
+		void CleanupConnection(connid_t connectionId);
 
 	};
 
