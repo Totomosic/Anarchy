@@ -36,3 +36,4 @@ packages/
 *.pem
 **.cfg
 Makefile
+!Anarchy-ServerHost/src/Debug/

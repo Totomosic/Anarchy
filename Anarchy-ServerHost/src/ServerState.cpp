@@ -5,7 +5,7 @@ namespace Anarchy
 {
 
 	ServerState::ServerState()
-		: m_Socket(), m_Connections(), m_Entities()
+		: m_Socket(), m_Connections(), m_Entities(), m_DebugCommands()
 	{
 	}
 
@@ -22,6 +22,8 @@ namespace Anarchy
 		m_Socket->Run();
 		BLT_INFO("Server starting at {}", serverAddress);
 		m_Listener = std::make_unique<ServerListener>(*m_Socket);
+
+		m_DebugCommands.StartStdinListener();
 	}
 
 	const ServerSocket& ServerState::GetSocket() const

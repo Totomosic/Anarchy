@@ -4,6 +4,8 @@
 #include "ServerListener.h"
 #include "Entities/ServerEntityCollection.h"
 
+#include "Debug/DebugCommandManager.h"
+
 namespace Anarchy
 {
 
@@ -15,6 +17,8 @@ namespace Anarchy
 		ConnectionsManager m_Connections;
 
 		std::unique_ptr<ServerEntityCollection> m_Entities;
+
+		DebugCommandManager m_DebugCommands;
 
 	private:
 		ServerState();
