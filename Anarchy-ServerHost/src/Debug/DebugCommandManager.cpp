@@ -60,7 +60,7 @@ namespace Anarchy
 
 	std::optional<RunDebugCommand> DebugCommandManager::SplitString(const std::string& commandString) const
 	{
-		if (commandString.front() != COMMAND_CHAR)
+		if (commandString.empty() || commandString.front() != COMMAND_CHAR)
 		{
 			return {};
 		}
@@ -86,26 +86,56 @@ namespace Anarchy
 		m_Registry.Register("help", [this](const RunDebugCommand& command)
 			{
 				LogMessage("Commands:");
-				LogMessage("/status");
+				LogMessage("/status [ConnectionId]");
 				LogMessage("/list");
-				LogMessage("/disconnect connectionId");
+				LogMessage("/disconnect ConnectionId");
 			});
 
 		m_Registry.Register("status", [this](const RunDebugCommand& command)
 			{
-				const SocketAddress& address = ServerState::Get().GetSocket().GetAddress();
-				std::vector<ClientConnection*> connections = ServerState::Get().GetConnections().GetConnections();
-				LogMessage("Server running on " + address.ToString());
-				LogMessage("Serving " + std::to_string(connections.size()) + " connections");
+				if (command.Args.size() == 0)
+				{
+					const SocketAddress& address = ServerState::Get().GetSocket().GetAddress();
+					std::vector<ClientConnection*> connections = ServerState::Get().GetConnections().GetConnections();
+					LogMessage("Server running on " + address.ToString());
+					LogMessage("Serving " + std::to_string(connections.size()) + " connections");
+				}
+				else if (command.Args.size() == 1)
+				{
+					try
+					{
+						connid_t connectionId = std::stoi(command.Args[0]);
+						if (ServerState::Get().GetConnections().HasConnection(connectionId))
+						{
+							ClientConnection& connection = ServerState::Get().GetConnections().GetConnection(connectionId);
+							LogMessage("Active Connection: ConnectionId=" + std::to_string(connection.GetConnectionId()));
+							LogMessage("Address: " + connection.GetAddress().ToString());
+							LogMessage("Average RTT: " + std::to_string(connection.GetAverageRTT()) + "ms");
+							return;
+						}
+						BLT_ERROR("No connection with id {} exists", connectionId);
+					}
+					catch (std::invalid_argument e)
+					{
+						BLT_ERROR("Invalid ConnectionId argument");
+					}
+				}
 			});
 
 		m_Registry.Register("list", [this](const RunDebugCommand& command)
 			{
 				std::vector<ClientConnection*> connections = ServerState::Get().GetConnections().GetConnections();
-				LogMessage("Active Connections:");
-				for (ClientConnection* connection : connections)
+				if (connections.size() > 0)
 				{
-					LogMessage("Address: " + connection->GetAddress().ToString() + " ConnectionId: " + std::to_string(connection->GetConnectionId()));
+					LogMessage("Active Connections:");
+					for (ClientConnection* connection : connections)
+					{
+						LogMessage("Address: " + connection->GetAddress().ToString() + " ConnectionId: " + std::to_string(connection->GetConnectionId()));
+					}
+				}
+				else
+				{
+					LogMessage("No active connections.");
 				}
 			});
 
@@ -128,7 +158,7 @@ namespace Anarchy
 				}
 				catch (std::invalid_argument e)
 				{
-					BLT_ERROR("Invalid connection id argument");
+					BLT_ERROR("Invalid ConnectionId argument");
 				}				
 			});
 	}

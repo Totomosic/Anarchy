@@ -11,7 +11,8 @@ namespace Anarchy
 
 	ConnectionManager::ConnectionManager(const SocketAddress& address)
 		: m_Bus(), m_TaskManager(m_Bus), m_OnDisconnect(m_Bus.GetEmitter<ServerDisconnect>(ClientEvents::DisconnectedFromServer)), 
-		m_Connection(address), m_ConnectionId(InvalidConnectionId), m_Connecting(false), m_SequenceId(0), m_Listener(), m_MessageHandlers(), m_TimeSinceKeepAlive(0), m_TimeSinceLastReceivedMessage(0)
+		m_Connection(address), m_ConnectionId(InvalidConnectionId), m_Connecting(false), m_SequenceId(0), m_Listener(), m_MessageHandlers(), m_TimeSinceKeepAlive(0), m_TimeSinceLastReceivedMessage(0),
+		m_ReceivedMessages(), m_SentMessages()
 	{
 		Register<KeepAlivePacket>(ANCH_BIND_LISTENER_FN(ConnectionManager::OnKeepAlive));
 
@@ -107,18 +108,22 @@ namespace Anarchy
 	{
 		BLT_ASSERT(IsConnected(), "Must be connected to send keep alive");
 		KeepAlivePacket packet;
-		GetServerSocket().SendPacket(MessageType::KeepAlive, CreateMessage(packet));
+		auto message = CreateMessage(packet);
+		HandleOutgoingMessage(message, false);
+		GetServerSocket().SendPacket(MessageType::KeepAlive, message);
 	}
 
 	void ConnectionManager::OnKeepAlive(const NetworkMessage<KeepAlivePacket>& message)
 	{
+		HandleIncomingMessage(message, false);
 		ResetTimeSinceLastReceivedMessage();
 	}
 
 	void ConnectionManager::OnForceDisconnect(const NetworkMessage<ForceDisconnectMessage>& message)
 	{
-		if (IsSeqIdGreater(message.SequenceId, GetRemoteSequenceId()))
+		if (IsSeqIdGreater(message.Header.SequenceId, GetRemoteSequenceId()))
 		{
+			HandleIncomingMessage(message);
 			DisconnectInternal();
 		}
 	}
@@ -131,13 +136,15 @@ namespace Anarchy
 		return TaskManager::Get().Run([this, request, timeoutSeconds]()
 			{
 				IncrementSequenceId();
-				auto response = AwaitResponse<ServerConnectionResponse>(CreateMessage(request), timeoutSeconds);
+				auto message = CreateMessage(request);
+				HandleOutgoingMessage(message);
+				auto response = AwaitResponse<ServerConnectionResponse>(message, timeoutSeconds);
 				m_Connecting = false;
-				if (response && IsSeqIdGreater(response->SequenceId, GetRemoteSequenceId()))
+				if (response && IsSeqIdGreater(response->Header.SequenceId, GetRemoteSequenceId()))
 				{
 					ResetTimeSinceLastReceivedMessage();
 					m_ConnectionId = response->Message.ConnectionId;
-					SetRemoteSequenceId(response->SequenceId);
+					SetRemoteSequenceId(response->Header.SequenceId);
 					return MakeOptional(response);
 				}
 				return std::optional<ServerConnectionResponse>();
@@ -151,11 +158,13 @@ namespace Anarchy
 			{
 				m_Bus.Flush();
 				IncrementSequenceId();
-				auto response = AwaitResponse<ServerDisconnectResponse>(CreateMessage(request), timeoutSeconds);
-				if (response && response->SequenceId == 0)
+				auto message = CreateMessage(request);
+				HandleOutgoingMessage(message);
+				auto response = AwaitResponse<ServerDisconnectResponse>(message, timeoutSeconds);
+				if (response && response->Header.SequenceId == 0)
 				{
 					ResetTimeSinceLastReceivedMessage();
-					SetRemoteSequenceId(response->SequenceId);
+					SetRemoteSequenceId(response->Header.SequenceId);
 					DisconnectInternal();
 					return MakeOptional(response);
 				}
@@ -169,11 +178,13 @@ namespace Anarchy
 		return TaskManager::Get().Run([this, request, timeoutSeconds]()
 			{
 				IncrementSequenceId();
-				auto response = AwaitResponse<CreateCharacterResponse>(CreateMessage(request), timeoutSeconds);
-				if (response && IsSeqIdGreater(response->SequenceId, GetRemoteSequenceId()))
+				auto message = CreateMessage(request);
+				HandleOutgoingMessage(message);
+				auto response = AwaitResponse<CreateCharacterResponse>(message, timeoutSeconds);
+				if (response && IsSeqIdGreater(response->Header.SequenceId, GetRemoteSequenceId()))
 				{
 					ResetTimeSinceLastReceivedMessage();
-					SetRemoteSequenceId(response->SequenceId);
+					SetRemoteSequenceId(response->Header.SequenceId);
 					return MakeOptional(response);					
 				}
 				return std::optional<CreateCharacterResponse>();
@@ -186,11 +197,13 @@ namespace Anarchy
 		return TaskManager::Get().Run([this, request, timeoutSeconds]()
 			{
 				IncrementSequenceId();
-				auto response = AwaitResponse<GetEntitiesResponse>(CreateMessage(request), timeoutSeconds);
-				if (response && IsSeqIdGreater(response->SequenceId, GetRemoteSequenceId()))
+				auto message = CreateMessage(request);
+				HandleOutgoingMessage(message);
+				auto response = AwaitResponse<GetEntitiesResponse>(message, timeoutSeconds);
+				if (response && IsSeqIdGreater(response->Header.SequenceId, GetRemoteSequenceId()))
 				{
 					ResetTimeSinceLastReceivedMessage();
-					SetRemoteSequenceId(response->SequenceId);
+					SetRemoteSequenceId(response->Header.SequenceId);
 					return MakeOptional(response);
 				}
 				return std::optional<GetEntitiesResponse>();
@@ -199,10 +212,11 @@ namespace Anarchy
 
 	void ConnectionManager::SpawnEntities(const NetworkMessage<SpawnEntitiesRequest>& request)
 	{
-		if (IsSeqIdGreater(request.SequenceId, GetRemoteSequenceId()))
+		if (IsSeqIdGreater(request.Header.SequenceId, GetRemoteSequenceId()))
 		{
+			HandleIncomingMessage(request);
 			ResetTimeSinceLastReceivedMessage();
-			SetRemoteSequenceId(request.SequenceId);
+			SetRemoteSequenceId(request.Header.SequenceId);
 			for (const EntityData& entity : request.Message.Entities)
 			{
 				ClientState::Get().GetEntities().CreateFromEntityData(entity);
@@ -212,10 +226,11 @@ namespace Anarchy
 
 	void ConnectionManager::DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request)
 	{
-		if (IsSeqIdGreater(request.SequenceId, GetRemoteSequenceId()))
+		if (IsSeqIdGreater(request.Header.SequenceId, GetRemoteSequenceId()))
 		{
+			HandleIncomingMessage(request);
 			ResetTimeSinceLastReceivedMessage();
-			SetRemoteSequenceId(request.SequenceId);
+			SetRemoteSequenceId(request.Header.SequenceId);
 			for (entityid_t entity : request.Message.Entities)
 			{
 				ClientState::Get().GetEntities().RemoveEntity(entity);
@@ -225,11 +240,16 @@ namespace Anarchy
 
 	void ConnectionManager::UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request)
 	{
-		if (IsSeqIdGreater(request.SequenceId, GetRemoteSequenceId()))
+		if (IsSeqIdGreater(request.Header.SequenceId, GetRemoteSequenceId()))
 		{
+			HandleIncomingMessage(request);
 			ResetTimeSinceLastReceivedMessage();
-			SetRemoteSequenceId(request.SequenceId);
+			SetRemoteSequenceId(request.Header.SequenceId);
 			BLT_INFO("Updating...");
+			if (IsConnected())
+			{
+				SendKeepAlive();
+			}
 		}
 	}
 
@@ -257,6 +277,13 @@ namespace Anarchy
 	void ConnectionManager::ResetTimeSinceLastReceivedMessage()
 	{
 		m_TimeSinceLastReceivedMessage = 0;
+	}
+
+	void ConnectionManager::HandlePacketAcked(seqid_t sequenceId, PacketData* data) const
+	{
+		data->Acked = true;
+		uint64_t deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(GetTimestamp() - data->Timestamp).count();
+		BLT_INFO("Got Ack for SequenceId={0}, RTT={1}ms", sequenceId, deltaTime);
 	}
 
 }

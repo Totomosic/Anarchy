@@ -10,7 +10,7 @@ namespace Anarchy
 #define ANCH_SERVER_BIND_FN(fn) std::bind(&fn, this, std::placeholders::_1)
 
 	ServerListener::ServerListener(ServerSocket& socket)
-		: m_Listener(), m_ServerSocket(socket), m_MessageHandlers()
+		: m_Listener(), m_ServerSocket(socket), m_MessageHandlers(), m_Mutex()
 	{
 		Register<ServerConnectionResponse, ServerConnectionRequest>(ANCH_SERVER_BIND_FN(ServerListener::Connect));
 		Register<ServerDisconnectResponse, ServerDisconnectRequest>(ANCH_SERVER_BIND_FN(ServerListener::Disconnect));
@@ -33,6 +33,7 @@ namespace Anarchy
 
 	void ServerListener::Update(TimeDelta delta)
 	{
+		std::scoped_lock<std::mutex> lock(m_Mutex);
 		std::vector<connid_t> connectionsToRemove;
 		std::vector<connid_t> keepAliveConnections;
 		for (ClientConnection* connection : ServerState::Get().GetConnections().GetConnections())
@@ -48,56 +49,42 @@ namespace Anarchy
 				keepAliveConnections.push_back(connection->GetConnectionId());
 			}
 		}
-		ForceDisconnectConnections(connectionsToRemove);
-		SendKeepAlive(keepAliveConnections);
+		ForceDisconnectConnectionsInternal(connectionsToRemove);
+		SendKeepAliveInternal(keepAliveConnections);
 	}
 
 	void ServerListener::OnKeepAlive(const ServerRequest<ServerNetworkMessage<KeepAlivePacket>>& packet)
 	{
+		std::scoped_lock<std::mutex> lock(m_Mutex);
 		ClientConnection* connection = GetConnection(packet.Request.ConnectionId);
 		if (connection != nullptr)
 		{
+			HandleIncomingMessage(packet.Request, false);
 			connection->ResetTimeSinceLastPacket();
 		}
 	}
 
 	void ServerListener::SendKeepAlive(const std::vector<connid_t>& connections)
 	{
-		for (connid_t connectionId : connections)
-		{
-			ClientConnection* connection = GetConnection(connectionId);
-			if (connection != nullptr)
-			{
-				KeepAlivePacket packet;
-				GetSocket().SendPacket(connection->GetAddress(), MessageType::KeepAlive, CreateMessage(connectionId, packet));
-			}
-		}
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		SendKeepAliveInternal(connections);
 	}
 
 	void ServerListener::ForceDisconnectConnections(const std::vector<connid_t>& connectionIds)
 	{
-		for (connid_t connectionId : connectionIds)
-		{
-			ClientConnection* connection = GetConnection(connectionId);
-			if (connection != nullptr)
-			{
-				connection->IncrementSequenceId();
-				BLT_ERROR("[ConnectionId={0}] [SequenceId={1}] Sending Force Disconnect Message", connectionId, connection->GetSequenceId());
-				ForceDisconnectMessage message;
-				GetSocket().SendPacket(connection->GetAddress(), MessageType::ForceDisconnect, CreateMessage(connectionId, message));
-				CleanupConnection(connectionId);
-				ServerState::Get().GetConnections().RemoveConnection(connectionId);
-			}
-		}
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		ForceDisconnectConnectionsInternal(connectionIds);
 	}
 
 	std::optional<ServerConnectionResponse> ServerListener::Connect(const ServerRequest<ServerNetworkMessage<ServerConnectionRequest>>& request)
 	{
-		BLT_INFO("[SequenceId={0}] Connection Request Received", request.Request.SequenceId);
-		if (IsSeqIdGreater(request.Request.SequenceId, 0) && request.Request.ConnectionId == InvalidConnectionId)
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		BLT_INFO("[SequenceId={0}] Connection Request Received", request.Request.Header.SequenceId);
+		if (IsSeqIdGreater(request.Request.Header.SequenceId, 0) && request.Request.ConnectionId == InvalidConnectionId)
 		{
+			HandleIncomingMessage(request.Request);
 			ClientConnection& connection = ServerState::Get().GetConnections().AddConnection(request.Request.Message.Username, request.From);
-			connection.SetRemoteSequenceId(request.Request.SequenceId);
+			connection.SetRemoteSequenceId(request.Request.Header.SequenceId);
 			connection.SetSequenceId(1);
 			connection.ResetTimeSinceLastPacket();
 			connection.ResetTimeSinceLastSentPacket();
@@ -112,13 +99,15 @@ namespace Anarchy
 
 	std::optional<ServerDisconnectResponse> ServerListener::Disconnect(const ServerRequest<ServerNetworkMessage<ServerDisconnectRequest>>& request)
 	{
-		BLT_WARN("[ConnectionId={0}] [SequenceId={1}] Disconnect Request Received", request.Request.ConnectionId, request.Request.SequenceId);
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		BLT_WARN("[ConnectionId={0}] [SequenceId={1}] Disconnect Request Received", request.Request.ConnectionId, request.Request.Header.SequenceId);
 		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
 		if (connection != nullptr)
 		{
-			if (IsSeqIdGreater(request.Request.SequenceId, connection->GetRemoteSequenceId()) && ServerState::Get().GetConnections().RemoveConnection(request.Request.ConnectionId))
+			if (IsSeqIdGreater(request.Request.Header.SequenceId, connection->GetRemoteSequenceId()) && ServerState::Get().GetConnections().RemoveConnection(request.Request.ConnectionId))
 			{
-				connection->SetRemoteSequenceId(request.Request.SequenceId);
+				HandleIncomingMessage(request.Request);
+				connection->SetRemoteSequenceId(request.Request.Header.SequenceId);
 				connection->IncrementSequenceId();
 				CleanupConnection(request.Request.ConnectionId);
 				BLT_INFO("[ConnectionId={0}] [SequenceId={1}] Sending Disconnect Response", request.Request.ConnectionId, GetSequenceId(request.Request.ConnectionId));
@@ -131,10 +120,12 @@ namespace Anarchy
 
 	std::optional<CreateCharacterResponse> ServerListener::CreateCharacter(const ServerRequest<ServerNetworkMessage<CreateCharacterRequest>>& request)
 	{
-		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Create Character Request Received", request.Request.ConnectionId, request.Request.SequenceId);
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Create Character Request Received", request.Request.ConnectionId, request.Request.Header.SequenceId);
 		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
-		if (connection != nullptr && IsSeqIdGreater(request.Request.SequenceId, connection->GetRemoteSequenceId()))
+		if (connection != nullptr && IsSeqIdGreater(request.Request.Header.SequenceId, connection->GetRemoteSequenceId()))
 		{
+			HandleIncomingMessage(request.Request);
 			CreateCharacterResponse response;
 			response.Data.NetworkId = ServerState::Get().GetEntities().GetNextEntityId();
 			response.Data.Level = 1;
@@ -144,9 +135,9 @@ namespace Anarchy
 
 			SpawnEntitiesRequest spawnRequest;
 			spawnRequest.Entities.push_back(response.Data);
-			SpawnEntities(ServerState::Get().GetConnections().GetConnectionIdsExcept(request.Request.ConnectionId), spawnRequest, request.Request.ConnectionId);
+			SpawnEntitiesInternal(ServerState::Get().GetConnections().GetConnectionIdsExcept(request.Request.ConnectionId), spawnRequest, request.Request.ConnectionId);
 
-			connection->SetRemoteSequenceId(request.Request.SequenceId);
+			connection->SetRemoteSequenceId(request.Request.Header.SequenceId);
 			connection->IncrementSequenceId();
 			connection->ResetTimeSinceLastPacket();
 			connection->ResetTimeSinceLastSentPacket();
@@ -158,11 +149,13 @@ namespace Anarchy
 
 	std::optional<GetEntitiesResponse> ServerListener::GetEntities(const ServerRequest<ServerNetworkMessage<GetEntitiesRequest>>& request)
 	{
-		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Get Entities Request Received", request.Request.ConnectionId, request.Request.SequenceId);
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Get Entities Request Received", request.Request.ConnectionId, request.Request.Header.SequenceId);
 		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
-		if (connection != nullptr && IsSeqIdGreater(request.Request.SequenceId, connection->GetRemoteSequenceId()))
+		if (connection != nullptr && IsSeqIdGreater(request.Request.Header.SequenceId, connection->GetRemoteSequenceId()))
 		{
-			connection->SetRemoteSequenceId(request.Request.SequenceId);
+			HandleIncomingMessage(request.Request);
+			connection->SetRemoteSequenceId(request.Request.Header.SequenceId);
 			connection->IncrementSequenceId();
 			connection->ResetTimeSinceLastPacket();
 			connection->ResetTimeSinceLastSentPacket();
@@ -179,6 +172,61 @@ namespace Anarchy
 
 	void ServerListener::SpawnEntities(const std::vector<connid_t>& connections, const SpawnEntitiesRequest& request, connid_t ownerConnectionId)
 	{
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		SpawnEntitiesInternal(connections, request, ownerConnectionId);
+	}
+
+	void ServerListener::DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request)
+	{
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		DestroyEntitiesInternal(connections, request);
+	}
+
+	void ServerListener::UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request)
+	{
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		UpdateEntitiesInternal(connections, request);
+	}
+
+	void ServerListener::OnMoveCommand(const ServerNetworkMessage<EntityCommand<TileMovement>>& command)
+	{
+		
+	}
+
+	void ServerListener::SendKeepAliveInternal(const std::vector<connid_t>& connections)
+	{
+		for (connid_t connectionId : connections)
+		{
+			ClientConnection* connection = GetConnection(connectionId);
+			if (connection != nullptr)
+			{
+				KeepAlivePacket packet;
+				auto message = CreateMessage(connectionId, packet);
+				HandleOutgoingMessage(connection, message, false);
+				GetSocket().SendPacket(connection->GetAddress(), MessageType::KeepAlive, message);
+			}
+		}
+	}
+
+	void ServerListener::ForceDisconnectConnectionsInternal(const std::vector<connid_t>& connectionIds)
+	{
+		for (connid_t connectionId : connectionIds)
+		{
+			ClientConnection* connection = GetConnection(connectionId);
+			if (connection != nullptr)
+			{
+				connection->IncrementSequenceId();
+				BLT_ERROR("[ConnectionId={0}] [SequenceId={1}] Sending Force Disconnect Message", connectionId, connection->GetSequenceId());
+				ForceDisconnectMessage message;
+				GetSocket().SendPacket(connection->GetAddress(), MessageType::ForceDisconnect, CreateMessage(connectionId, message));
+				CleanupConnection(connectionId);
+				ServerState::Get().GetConnections().RemoveConnection(connectionId);
+			}
+		}
+	}
+
+	void ServerListener::SpawnEntitiesInternal(const std::vector<connid_t>& connections, const SpawnEntitiesRequest& request, connid_t ownerConnectionId)
+	{
 		for (const EntityData& entity : request.Entities)
 		{
 			EntityHandle e = ServerState::Get().GetEntities().CreateFromEntityData(entity, ownerConnectionId);
@@ -188,11 +236,13 @@ namespace Anarchy
 			connection->IncrementSequenceId();
 			connection->ResetTimeSinceLastSentPacket();
 			BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Spawn Entities Request", connection->GetConnectionId(), connection->GetSequenceId());
-			GetSocket().SendPacket(connection->GetAddress(), SpawnEntitiesRequest::Type, CreateMessage(connection->GetConnectionId(), request));
+			auto message = CreateMessage(connection->GetConnectionId(), request);
+			HandleOutgoingMessage(connection, message);
+			GetSocket().SendPacket(connection->GetAddress(), SpawnEntitiesRequest::Type, message);
 		}
 	}
 
-	void ServerListener::DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request)
+	void ServerListener::DestroyEntitiesInternal(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request)
 	{
 		for (entityid_t id : request.Entities)
 		{
@@ -203,24 +253,33 @@ namespace Anarchy
 			connection->IncrementSequenceId();
 			connection->ResetTimeSinceLastSentPacket();
 			BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Destroy Entities Request", connection->GetConnectionId(), connection->GetSequenceId());
-			GetSocket().SendPacket(connection->GetAddress(), DestroyEntitiesRequest::Type, CreateMessage(connection->GetConnectionId(), request));
+			auto message = CreateMessage(connection->GetConnectionId(), request);
+			HandleOutgoingMessage(connection, message);
+			GetSocket().SendPacket(connection->GetAddress(), DestroyEntitiesRequest::Type, message);
 		}
 	}
 
-	void ServerListener::UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request)
+	void ServerListener::UpdateEntitiesInternal(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request)
 	{
 		for (ClientConnection* connection : ServerState::Get().GetConnections().GetConnections(connections))
 		{
 			connection->IncrementSequenceId();
 			connection->ResetTimeSinceLastSentPacket();
-			BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Update Entities Request", connection->GetConnectionId(), connection->GetSequenceId());
-			GetSocket().SendPacket(connection->GetAddress(), UpdateEntitiesRequest::Type, CreateMessage(connection->GetConnectionId(), request));
+			//BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Update Entities Request", connection->GetConnectionId(), connection->GetSequenceId());
+			auto message = CreateMessage(connection->GetConnectionId(), request);
+			HandleOutgoingMessage(connection, message);
+			GetSocket().SendPacket(connection->GetAddress(), UpdateEntitiesRequest::Type, message);
 		}
 	}
 
-	void ServerListener::OnMoveCommand(const ServerNetworkMessage<EntityCommand<TileMovement>>& command)
+	void ServerListener::HandlePacketAcked(seqid_t sequenceId, PacketData* data, ClientConnection* connection) const
 	{
-		
+		data->Acked = true;
+		uint64_t timeDelta = std::chrono::duration_cast<std::chrono::milliseconds>(GetTimestamp() - data->Timestamp).count();
+		if (connection != nullptr)
+		{
+			connection->UpdateAverageRTT(timeDelta);
+		}
 	}
 
 	ClientConnection* ServerListener::GetConnection(connid_t connectionId) const
@@ -251,7 +310,7 @@ namespace Anarchy
 	{
 		DestroyEntitiesRequest destroyRequest;
 		destroyRequest.Entities = ServerState::Get().GetEntities().GetAllIdsOwnedBy(connectionId);
-		DestroyEntities(ServerState::Get().GetConnections().GetConnectionIdsExcept(connectionId), destroyRequest);
+		DestroyEntitiesInternal(ServerState::Get().GetConnections().GetConnectionIdsExcept(connectionId), destroyRequest);
 	}
 
 }

@@ -36,6 +36,7 @@ namespace Anarchy
 			OutputMemoryStream stream;
 			Serialize(stream, type);
 			Serialize(stream, data);
+			BLT_ASSERT(stream.GetRemainingDataSize() <= MaxPacketSize, "Packet too large");
 			m_Socket.SendTo(m_Address, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
 		}
 

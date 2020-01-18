@@ -9,8 +9,8 @@
 namespace Anarchy
 {
 
-	static constexpr int TARGET_TICK_RATE = 5;
-	static const double TARGET_DELTA_TIME = 1.0 / TARGET_TICK_RATE;
+	static constexpr int TARGET_TICK_RATE = 20;
+	static constexpr double TARGET_DELTA_TIME = 1.0 / TARGET_TICK_RATE;
 
 	void Server::Init()
 	{
@@ -38,7 +38,7 @@ namespace Anarchy
 		ServerState::Get().GetSocketApi().Update(Time::Get().RenderingTimeline().DeltaTime());
 
 		UpdateEntitiesRequest request;
-		//ServerState::Get().GetSocketApi().UpdateEntities(ServerState::Get().GetConnections().GetAllConnectionIds(), request);
+		ServerState::Get().GetSocketApi().UpdateEntities(ServerState::Get().GetConnections().GetAllConnectionIds(), request);
 	}
 
 	void Server::Render()

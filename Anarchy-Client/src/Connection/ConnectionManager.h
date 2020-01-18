@@ -1,6 +1,7 @@
 #pragma once
 #include "ServerConnection.h"
 #include "Lib/SocketApi.h"
+#include "Lib/SequenceBuffer.h"
 
 namespace Anarchy
 {
@@ -32,6 +33,9 @@ namespace Anarchy
 
 		double m_TimeSinceKeepAlive;
 		double m_TimeSinceLastReceivedMessage;
+
+		SequenceBuffer m_ReceivedMessages;
+		SequenceBuffer m_SentMessages;
 
 	public:
 		ConnectionManager(const SocketAddress& address);
@@ -88,13 +92,17 @@ namespace Anarchy
 		void SetRemoteSequenceId(seqid_t seqId);
 		void ResetTimeSinceLastReceivedMessage();
 
+		inline typename PacketData::timestamp_t GetTimestamp() const { return std::chrono::high_resolution_clock::now(); }
+
 		template<typename T>
 		ServerNetworkMessage<T> CreateMessage(const T& data)
 		{
 			ServerNetworkMessage<T> message;
+			message.Header.SequenceId = GetSequenceId();
+			message.Header.Ack = 0;
+			message.Header.AckBitset = 0;
 			message.ConnectionId = GetConnectionId();
 			message.Message = data;
-			message.SequenceId = GetSequenceId();
 			return message;
 		}
 
@@ -107,6 +115,71 @@ namespace Anarchy
 			}
 			return std::optional<T>();
 		}
+
+		template<typename T>
+		void HandleOutgoingMessage(ServerNetworkMessage<T>& message, bool requiresAck = true)
+		{
+			message.Header.AckBitset = 0;
+			if (requiresAck)
+			{
+				PacketData& data = m_SentMessages.InsertPacketData(message.Header.SequenceId);
+				data.Timestamp = GetTimestamp();
+			}
+			seqid_t base = GetRemoteSequenceId();
+			PacketData* packet = m_ReceivedMessages.GetPacketData(base);
+			if (packet != nullptr)
+			{
+				message.Header.Ack = base;
+				packet->Acked = true;
+				for (seqid_t i = 0; i < 32; i++)
+				{
+					// Find to underflow
+					seqid_t seqid = base - (i + 1);
+					PacketData* data = m_ReceivedMessages.GetPacketData(seqid);
+					if (data != nullptr)
+					{
+						message.Header.AckBitset |= BLT_BIT(i);
+						data->Acked = true;
+					}
+				}
+			}
+			else
+			{
+				message.Header.Ack = base + (std::numeric_limits<seqid_t>::max() / 2);
+			}
+		}
+
+		template<typename T>
+		void HandleIncomingMessage(const NetworkMessage<T>& message, bool requiresAck = true)
+		{
+			auto timestamp = GetTimestamp();
+			if (requiresAck)
+			{
+				PacketData& data = m_ReceivedMessages.InsertPacketData(message.Header.SequenceId);
+				data.Timestamp = timestamp;
+			}
+
+			PacketData* packet = m_SentMessages.GetPacketData(message.Header.Ack);
+			if (packet != nullptr)
+			{
+				if (!packet->Acked)
+					HandlePacketAcked(message.Header.Ack, packet);
+
+				for (seqid_t i = 0; i < 32; i++)
+				{
+					if (BLT_IS_BIT_SET(message.Header.AckBitset, i))
+					{
+						// Fine for seqid to underflow
+						seqid_t seqid = message.Header.Ack - (i + 1);
+						PacketData* data = m_SentMessages.GetPacketData(seqid);
+						if (data && !data->Acked)
+							HandlePacketAcked(seqid, data);
+					}
+				}
+			}
+		}
+
+		void HandlePacketAcked(seqid_t sequenceId, PacketData* data) const;
 
 		template<typename TResponse, typename TRequest>
 		std::optional<NetworkMessage<TResponse>> AwaitResponse(const ServerNetworkMessage<TRequest>& request, double timeoutSeconds)
@@ -133,6 +206,10 @@ namespace Anarchy
 			if (timeoutSeconds == IgnoreTimeout)
 			{
 				std::optional<NetworkMessage<TResponse>> value = future.get();
+				if (value)
+				{
+					HandleIncomingMessage(value.value());
+				}
 				return value;
 			}
 			BLT_ASSERT(timeoutSeconds > 0.0, "Invalid timeout");
@@ -140,6 +217,10 @@ namespace Anarchy
 			if (status == std::future_status::ready)
 			{
 				std::optional<NetworkMessage<TResponse>> value = future.get();
+				if (value)
+				{
+					HandleIncomingMessage(value.value());
+				}
 				return value;
 			}
 			return {};

@@ -34,7 +34,8 @@ do
             BoltInstallDir .. "%{IncludeDirs.Lua}",
             BoltInstallDir .. "%{IncludeDirs.BoltLib}",
             BoltInstallDir .. "%{IncludeDirs.Bolt}",
-            "src"
+            "src",
+            "vendor"
         }
 
         links

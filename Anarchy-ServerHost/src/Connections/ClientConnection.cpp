@@ -9,7 +9,8 @@ namespace Anarchy
 	}
 
 	ClientConnection::ClientConnection(const std::string& username, connid_t connectionId, const SocketAddress& address)
-		: m_Username(username), m_ConnectionId(connectionId), m_Address(address), m_SequenceId(0), m_RemoteSequenceId(0), m_MillisecondsSinceReceivedPacket(0), m_MillisecondsSinceSentPacket(0)
+		: m_Username(username), m_ConnectionId(connectionId), m_Address(address), m_SequenceId(0), m_RemoteSequenceId(0), m_MillisecondsSinceReceivedPacket(0), m_MillisecondsSinceSentPacket(0), m_AverageRTT(0),
+		m_ReceivedMessages(), m_SentMessages()
 	{
 	}
 
@@ -81,6 +82,31 @@ namespace Anarchy
 	void ClientConnection::UpdateTimeSinceLastSentPacket(TimeDelta delta)
 	{
 		m_MillisecondsSinceSentPacket += delta.Milliseconds();
+	}
+
+	uint32_t ClientConnection::GetAverageRTT() const
+	{
+		return (uint32_t)m_AverageRTT;
+	}
+
+	void ClientConnection::UpdateAverageRTT(uint32_t rtt)
+	{
+		double delta = ((rtt - m_AverageRTT) * 0.1f);
+		m_AverageRTT += delta;
+		if (m_AverageRTT < 0)
+		{
+			m_AverageRTT = 0;
+		}
+	}
+
+	SequenceBuffer& ClientConnection::GetReceivedBuffer()
+	{
+		return m_ReceivedMessages;
+	}
+
+	SequenceBuffer& ClientConnection::GetSentBuffer()
+	{
+		return m_SentMessages;
 	}
 
 }

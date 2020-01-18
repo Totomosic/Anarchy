@@ -8,7 +8,7 @@ namespace Anarchy
 	ServerSocket::ServerSocket(const SocketAddress& address)
 		: m_Address(address), m_Socket(), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ClientMessageReceived>(ServerEvents::ClientMessageRecevied))
 	{
-		
+		m_Bus.SetImmediateMode(true);
 	}
 
 	const SocketAddress& ServerSocket::GetAddress() const
@@ -31,7 +31,7 @@ namespace Anarchy
 		m_Socket.Bind(m_Address);
 		Task listenerThread = TaskManager::Get().Run([this]()
 			{
-				std::byte buffer[8192];
+				std::byte buffer[MaxPacketSize];
 				while (true)
 				{
 					SocketAddress from;

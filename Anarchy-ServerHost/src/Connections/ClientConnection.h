@@ -1,6 +1,7 @@
 #pragma once
 #include "serverpch.h"
 #include "ServerLib.h"
+#include "Lib/SequenceBuffer.h"
 #include "Core/Time/TimeDelta.h"
 
 namespace Anarchy
@@ -17,6 +18,10 @@ namespace Anarchy
 
 		double m_MillisecondsSinceReceivedPacket;
 		double m_MillisecondsSinceSentPacket;
+		double m_AverageRTT;
+
+		SequenceBuffer m_ReceivedMessages;
+		SequenceBuffer m_SentMessages;
 
 	public:
 		ClientConnection();
@@ -38,6 +43,12 @@ namespace Anarchy
 		uint32_t GetTimeSinceLastSentPacket() const;
 		void ResetTimeSinceLastSentPacket();
 		void UpdateTimeSinceLastSentPacket(TimeDelta delta);
+
+		uint32_t GetAverageRTT() const;
+		void UpdateAverageRTT(uint32_t rtt);
+
+		SequenceBuffer& GetReceivedBuffer();
+		SequenceBuffer& GetSentBuffer();
 
 	};
 
