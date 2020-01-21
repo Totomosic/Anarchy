@@ -10,12 +10,13 @@ namespace Anarchy
 #define ANCH_SERVER_BIND_FN(fn) std::bind(&fn, this, std::placeholders::_1)
 
 	ServerListener::ServerListener(ServerSocket& socket)
-		: m_Listener(), m_ServerSocket(socket), m_MessageHandlers(), m_Mutex()
+		: m_Listener(), m_ServerSocket(socket), m_MessageHandlers(), m_CommandBuffer(), m_Mutex()
 	{
 		Register<ServerConnectionResponse, ServerConnectionRequest>(ANCH_SERVER_BIND_FN(ServerListener::Connect));
 		Register<ServerDisconnectResponse, ServerDisconnectRequest>(ANCH_SERVER_BIND_FN(ServerListener::Disconnect));
 		Register<CreateCharacterResponse, CreateCharacterRequest>(ANCH_SERVER_BIND_FN(ServerListener::CreateCharacter));
 		Register<GetEntitiesResponse, GetEntitiesRequest>(ANCH_SERVER_BIND_FN(ServerListener::GetEntities));
+		Register<GenericCommand>(ANCH_SERVER_BIND_FN(ServerListener::OnCommand));
 
 		Register<KeepAlivePacket>(ANCH_SERVER_BIND_FN(ServerListener::OnKeepAlive));
 
@@ -31,6 +32,17 @@ namespace Anarchy
 			});
 	}
 
+	CommandBuffer* ServerListener::GetCommandBuffer() const
+	{
+		return m_CommandBuffer;
+	}
+
+	void ServerListener::SetCommandBuffer(CommandBuffer* buffer)
+	{
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		m_CommandBuffer = buffer;
+	}
+
 	void ServerListener::Update(TimeDelta delta)
 	{
 		std::scoped_lock<std::mutex> lock(m_Mutex);
@@ -44,7 +56,7 @@ namespace Anarchy
 			{
 				connectionsToRemove.push_back(connection->GetConnectionId());
 			}
-			else if (connection->GetTimeSinceLastSentPacket() >= 1000)
+			else if (connection->GetTimeSinceLastSentPacket() >= 500)
 			{
 				keepAliveConnections.push_back(connection->GetConnectionId());
 			}
@@ -53,13 +65,13 @@ namespace Anarchy
 		SendKeepAliveInternal(keepAliveConnections);
 	}
 
-	void ServerListener::OnKeepAlive(const ServerRequest<ServerNetworkMessage<KeepAlivePacket>>& packet)
+	void ServerListener::OnKeepAlive(const ServerNetworkMessage<KeepAlivePacket>& packet)
 	{
 		std::scoped_lock<std::mutex> lock(m_Mutex);
-		ClientConnection* connection = GetConnection(packet.Request.ConnectionId);
+		ClientConnection* connection = GetConnection(packet.ConnectionId);
 		if (connection != nullptr)
 		{
-			HandleIncomingMessage(packet.Request, false);
+			HandleIncomingMessage(packet, false);
 			connection->ResetTimeSinceLastPacket();
 		}
 	}
@@ -188,9 +200,21 @@ namespace Anarchy
 		UpdateEntitiesInternal(connections, request);
 	}
 
-	void ServerListener::OnMoveCommand(const ServerNetworkMessage<EntityCommand<TileMovement>>& command)
+	void ServerListener::OnCommand(const ServerNetworkMessage<GenericCommand>& command)
 	{
-		
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Command Received", command.ConnectionId, command.Header.SequenceId);
+		ClientConnection* connection = GetConnection(command.ConnectionId);
+		if (connection != nullptr)
+		{
+			HandleIncomingMessage(command);
+			connection->SetRemoteSequenceId(command.Header.SequenceId);
+			connection->ResetTimeSinceLastPacket();
+			if (m_CommandBuffer != nullptr)
+			{
+				m_CommandBuffer->PushCommand(command.Message);
+			}
+		}
 	}
 
 	void ServerListener::SendKeepAliveInternal(const std::vector<connid_t>& connections)

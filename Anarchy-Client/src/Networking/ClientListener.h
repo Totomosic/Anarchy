@@ -1,17 +1,19 @@
 #pragma once
-#include "ServerConnection.h"
-#include "Lib/SocketApi.h"
+#include "ClientSocket.h"
 #include "Lib/SequenceBuffer.h"
+#include "Lib/SocketApi.h"
+#include "Lib/Entities/CommandBuffer.h"
+#include "Core/Tasks/TaskManager.h"
+#include "Core/Time/TimeDelta.h"
 
 namespace Anarchy
 {
 
 	struct ServerDisconnect
 	{
-
 	};
 
-	class ConnectionManager : public ClientSocketApi
+	class ClientListener : public ClientSocketApi
 	{
 	public:
 		inline static const double IgnoreTimeout = -1.0;
@@ -20,10 +22,10 @@ namespace Anarchy
 		EventBus m_Bus;
 		TaskManager m_TaskManager;
 		EventEmitter<ServerDisconnect> m_OnDisconnect;
-
-		ServerConnection m_Connection;
 		connid_t m_ConnectionId;
 		bool m_Connecting;
+
+		ClientSocket& m_Socket;
 
 		seqid_t m_SequenceId;
 		seqid_t m_RemoteSequenceId;
@@ -31,25 +33,28 @@ namespace Anarchy
 		ScopedEventListener m_Listener;
 		std::unordered_map<MessageType, std::function<void(InputMemoryStream&)>> m_MessageHandlers;
 
-		double m_TimeSinceKeepAlive;
+		double m_TimeSinceLastSentMessage;
 		double m_TimeSinceLastReceivedMessage;
 
 		SequenceBuffer m_ReceivedMessages;
 		SequenceBuffer m_SentMessages;
 
+		CommandBuffer m_Commands;
+
 	public:
-		ConnectionManager(const SocketAddress& address);
-		~ConnectionManager();
+		ClientListener(ClientSocket& socket);
+		~ClientListener();
 
-		bool IsConnecting() const;
-		bool IsConnected() const;
-		const ServerConnection& GetServerSocket() const;
-		ServerConnection& GetServerSocket();
-
-		connid_t GetConnectionId() const;
 		seqid_t GetSequenceId() const;
 		seqid_t GetRemoteSequenceId() const;
 		EventEmitter<ServerDisconnect>& OnDisconnect();
+		const ClientSocket& GetClientSocket() const;
+		ClientSocket& GetClientSocket();
+		bool IsConnecting() const;
+		bool IsConnected() const;
+
+		connid_t GetConnectionId() const;
+		CommandBuffer& GetCommandBuffer();
 
 		void Update(TimeDelta delta);
 
@@ -67,7 +72,7 @@ namespace Anarchy
 		void DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request) override;
 		void UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request) override;
 
-		void SendMoveCommand(const EntityCommand<TileMovement>& command) override;
+		void SendCommand(const GenericCommand& command) override;
 
 		template<typename TRequest>
 		void Register(const std::function<void(const NetworkMessage<TRequest>&)>& callback)
@@ -77,20 +82,21 @@ namespace Anarchy
 			m_MessageHandlers[messageType] = [this, callback](InputMemoryStream& stream)
 			{
 				m_TaskManager.RunOnMainThread(make_shared_function([callback, stream{ std::move(stream) }]() mutable
-					{
-						NetworkMessage<TRequest> request;
-						Deserialize(stream, request);
-						callback(request);
-					}));				
+				{
+					NetworkMessage<TRequest> request;
+					Deserialize(stream, request);
+					callback(request);
+				}));
 			};
 		}
-		
+
 	private:
 		void DisconnectInternal();
 
 		void IncrementSequenceId(seqid_t amount = 1);
 		void SetRemoteSequenceId(seqid_t seqId);
 		void ResetTimeSinceLastReceivedMessage();
+		void ResetTimeSinceLastSentMessage();
 
 		inline typename PacketData::timestamp_t GetTimestamp() const { return std::chrono::high_resolution_clock::now(); }
 
@@ -185,7 +191,7 @@ namespace Anarchy
 		std::optional<NetworkMessage<TResponse>> AwaitResponse(const ServerNetworkMessage<TRequest>& request, double timeoutSeconds)
 		{
 			std::promise<std::optional<NetworkMessage<TResponse>>> promise;
-			ScopedEventListener listener = GetServerSocket().OnMessageReceived().AddScopedEventListener([&promise](Event<ServerMessageReceived>& e)
+			ScopedEventListener listener = GetClientSocket().OnMessageReceived().AddScopedEventListener([&promise](Event<ServerMessageReceived>& e)
 				{
 					if (e.Data.Type == TResponse::Type)
 					{
@@ -202,7 +208,7 @@ namespace Anarchy
 					}
 				});
 			std::future<std::optional<NetworkMessage<TResponse>>> future = promise.get_future();
-			GetServerSocket().SendPacket(TRequest::Type, request);
+			GetClientSocket().SendPacket(TRequest::Type, request);
 			if (timeoutSeconds == IgnoreTimeout)
 			{
 				std::optional<NetworkMessage<TResponse>> value = future.get();
@@ -225,6 +231,7 @@ namespace Anarchy
 			}
 			return {};
 		}
+
 	};
 
 }

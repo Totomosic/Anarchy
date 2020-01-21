@@ -1,5 +1,5 @@
 #include "clientpch.h"
-#include "ServerConnection.h"
+#include "ClientSocket.h"
 #include "Events.h"
 
 #include "Engine/Networking/SocketUtil.h"
@@ -7,7 +7,7 @@
 namespace Anarchy
 {
 
-	ServerConnection::ServerConnection(const SocketAddress& address)
+	ClientSocket::ClientSocket(const SocketAddress& address)
 		: m_Address(address), m_Socket(), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>(ServerEvents::ServerMessageReceived))
 	{
 		m_Bus.SetImmediateMode(true);
@@ -15,22 +15,22 @@ namespace Anarchy
 		LaunchListenerThread();
 	}
 
-	const SocketAddress& ServerConnection::GetAddress() const
+	const SocketAddress& ClientSocket::GetAddress() const
 	{
 		return m_Address;
 	}
 
-	const UDPsocket& ServerConnection::GetSocket() const
+	const UDPsocket& ClientSocket::GetSocket() const
 	{
 		return m_Socket;
 	}
 
-	EventEmitter<ServerMessageReceived>& ServerConnection::OnMessageReceived()
+	EventEmitter<ServerMessageReceived>& ClientSocket::OnMessageReceived()
 	{
 		return m_OnMessage;
 	}
 
-	void ServerConnection::LaunchListenerThread()
+	void ClientSocket::LaunchListenerThread()
 	{
 		Task task = TaskManager::Get().Run([this]()
 			{

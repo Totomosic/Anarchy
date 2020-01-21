@@ -1,5 +1,5 @@
 #pragma 
-#include "Connection/ConnectionManager.h"
+#include "Networking/Connection/ConnectionManager.h"
 #include "Entities/ClientEntityCollection.h"
 
 namespace Anarchy

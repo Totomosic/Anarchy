@@ -8,7 +8,7 @@ namespace Anarchy
 {
 
 	ServerEntityCollection::ServerEntityCollection(Scene& scene, Layer& layer) : EntityCollection(scene, layer, false),
-		m_NetworkIdManager(0, std::numeric_limits<entityid_t>::max() - 1), m_Listener()
+		m_NetworkIdManager(0, std::numeric_limits<entityid_t>::max() - 1), m_Listener(), m_DirtyEntities()
 	{
 		m_Listener = m_GameLayer.Entities().OnEntityDestroyed().AddScopedEventListener([this](Event<EntityDestroyed>& e)
 			{
@@ -62,6 +62,24 @@ namespace Anarchy
 			}
 		}
 		return result;
+	}
+
+	const std::vector<entityid_t>& ServerEntityCollection::GetDirtyEntities() const
+	{
+		return m_DirtyEntities;
+	}
+
+	void ServerEntityCollection::SetEntityDirty(entityid_t entityId)
+	{
+		if (std::find(m_DirtyEntities.begin(), m_DirtyEntities.end(), entityId) == m_DirtyEntities.end())
+		{
+			m_DirtyEntities.push_back(entityId);
+		}
+	}
+
+	void ServerEntityCollection::ClearDirtyEntities()
+	{
+		m_DirtyEntities.clear();
 	}
 
 }

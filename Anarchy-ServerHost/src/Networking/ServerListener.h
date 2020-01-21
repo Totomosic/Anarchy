@@ -2,6 +2,7 @@
 #include "ServerSocket.h"
 #include "Lib/SocketApi.h"
 #include "Lib/SequenceBuffer.h"
+#include "Lib/Entities/CommandBuffer.h"
 #include "Connections/ClientConnection.h"
 #include "Core/Time/Time.h"
 
@@ -14,11 +15,15 @@ namespace Anarchy
 		ScopedEventListener m_Listener;
 		ServerSocket& m_ServerSocket;
 		std::unordered_map<MessageType, std::function<void(const SocketAddress&, InputMemoryStream&)>> m_MessageHandlers;
+		CommandBuffer* m_CommandBuffer;
 
 		std::mutex m_Mutex;
 
 	public:
 		ServerListener(ServerSocket& socket);
+
+		CommandBuffer* GetCommandBuffer() const;
+		void SetCommandBuffer(CommandBuffer* buffer);
 
 		template<typename TResponse, typename TRequest>
 		void Register(const std::function<std::optional<TResponse>(const ServerRequest<ServerNetworkMessage<TRequest>>&)>& callback)
@@ -42,22 +47,21 @@ namespace Anarchy
 		}
 
 		template<typename TRequest>
-		void Register(const std::function<void(const ServerRequest<ServerNetworkMessage<TRequest>>&)>& callback)
+		void Register(const std::function<void(const ServerNetworkMessage<TRequest>&)>& callback)
 		{
 			MessageType messageType = TRequest::Type;
 			BLT_ASSERT(m_MessageHandlers.find(messageType) == m_MessageHandlers.end(), "Handler already exists for message type");
 			m_MessageHandlers[messageType] = [callback](const SocketAddress& address, InputMemoryStream& data)
 			{
-				ServerRequest<ServerNetworkMessage<TRequest>> srequest;
-				srequest.From = address;
-				Deserialize(data, srequest.Request);
+				ServerNetworkMessage<TRequest> srequest;
+				Deserialize(data, srequest);
 				callback(srequest);
 			};
 		}
 
 		void Update(TimeDelta delta);
 
-		void OnKeepAlive(const ServerRequest<ServerNetworkMessage<KeepAlivePacket>>& packet) override;
+		void OnKeepAlive(const ServerNetworkMessage<KeepAlivePacket>& packet) override;
 		void SendKeepAlive(const std::vector<connid_t>& connections) override;
 		void ForceDisconnectConnections(const std::vector<connid_t>& connectionIds) override;
 
@@ -71,7 +75,7 @@ namespace Anarchy
 		void DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request) override;
 		void UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request) override;
 
-		void OnMoveCommand(const ServerNetworkMessage<EntityCommand<TileMovement>>& command) override;
+		void OnCommand(const ServerNetworkMessage<GenericCommand>& command) override;
 
 	private:
 		void SendKeepAliveInternal(const std::vector<connid_t>& connections);

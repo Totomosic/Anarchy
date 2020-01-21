@@ -1,5 +1,5 @@
 #include "clientpch.h"
-#include "ConnectionManager.h"
+#include "ClientListener.h"
 
 #include "ClientState.h"
 #include "Events.h"
@@ -9,20 +9,19 @@ namespace Anarchy
 
 #define ANCH_BIND_LISTENER_FN(func) std::bind(&func, this, std::placeholders::_1)
 
-	ConnectionManager::ConnectionManager(const SocketAddress& address)
-		: m_Bus(), m_TaskManager(m_Bus), m_OnDisconnect(m_Bus.GetEmitter<ServerDisconnect>(ClientEvents::DisconnectedFromServer)), 
-		m_Connection(address), m_ConnectionId(InvalidConnectionId), m_Connecting(false), m_SequenceId(0), m_Listener(), m_MessageHandlers(), m_TimeSinceKeepAlive(0), m_TimeSinceLastReceivedMessage(0),
-		m_ReceivedMessages(), m_SentMessages()
+	ClientListener::ClientListener(ClientSocket& socket)
+		: m_Bus(), m_TaskManager(m_Bus), m_OnDisconnect(m_Bus.GetEmitter<ServerDisconnect>(ClientEvents::DisconnectedFromServer)), m_ConnectionId(InvalidConnectionId), m_Connecting(false),
+		m_Socket(socket), m_SequenceId(0), m_RemoteSequenceId(0), m_Listener(), m_MessageHandlers(), m_TimeSinceLastReceivedMessage(0), m_TimeSinceLastSentMessage(0), m_ReceivedMessages(), m_SentMessages(), m_Commands()
 	{
-		Register<KeepAlivePacket>(ANCH_BIND_LISTENER_FN(ConnectionManager::OnKeepAlive));
+		Register<KeepAlivePacket>(ANCH_BIND_LISTENER_FN(ClientListener::OnKeepAlive));
 
-		Register<SpawnEntitiesRequest>(ANCH_BIND_LISTENER_FN(ConnectionManager::SpawnEntities));
-		Register<DestroyEntitiesRequest>(ANCH_BIND_LISTENER_FN(ConnectionManager::DestroyEntities));
-		Register<UpdateEntitiesRequest>(ANCH_BIND_LISTENER_FN(ConnectionManager::UpdateEntities));
+		Register<SpawnEntitiesRequest>(ANCH_BIND_LISTENER_FN(ClientListener::SpawnEntities));
+		Register<DestroyEntitiesRequest>(ANCH_BIND_LISTENER_FN(ClientListener::DestroyEntities));
+		Register<UpdateEntitiesRequest>(ANCH_BIND_LISTENER_FN(ClientListener::UpdateEntities));
 
-		Register<ForceDisconnectMessage>(ANCH_BIND_LISTENER_FN(ConnectionManager::OnForceDisconnect));
+		Register<ForceDisconnectMessage>(ANCH_BIND_LISTENER_FN(ClientListener::OnForceDisconnect));
 
-		m_Listener = GetServerSocket().OnMessageReceived().AddScopedEventListener([this](Event<ServerMessageReceived>& e)
+		m_Listener = GetClientSocket().OnMessageReceived().AddScopedEventListener([this](Event<ServerMessageReceived>& e)
 			{
 				MessageType type = e.Data.Type;
 				auto it = m_MessageHandlers.find(type);
@@ -34,52 +33,57 @@ namespace Anarchy
 			});
 	}
 
-	ConnectionManager::~ConnectionManager()
+	ClientListener::~ClientListener()
 	{
 		m_Bus.Flush();
 	}
 
-	bool ConnectionManager::IsConnecting() const
+	const ClientSocket& ClientListener::GetClientSocket() const
 	{
-		return m_Connecting;
+		return m_Socket;
 	}
 
-	bool ConnectionManager::IsConnected() const
+	ClientSocket& ClientListener::GetClientSocket()
 	{
-		return m_ConnectionId != InvalidConnectionId;
+		return m_Socket;
 	}
 
-	const ServerConnection& ConnectionManager::GetServerSocket() const
-	{
-		return m_Connection;
-	}
-
-	ServerConnection& ConnectionManager::GetServerSocket()
-	{
-		return m_Connection;
-	}
-
-	connid_t ConnectionManager::GetConnectionId() const
+	connid_t ClientListener::GetConnectionId() const
 	{
 		return m_ConnectionId;
 	}
 
-	seqid_t ConnectionManager::GetSequenceId() const
+	CommandBuffer& ClientListener::GetCommandBuffer()
+	{
+		return m_Commands;
+	}
+
+	seqid_t ClientListener::GetSequenceId() const
 	{
 		return m_SequenceId;
 	}
 
-	seqid_t ConnectionManager::GetRemoteSequenceId() const
+	seqid_t ClientListener::GetRemoteSequenceId() const
 	{
 		return m_RemoteSequenceId;
 	}
 
-	EventEmitter<ServerDisconnect>& ConnectionManager::OnDisconnect()
+	EventEmitter<ServerDisconnect>& ClientListener::OnDisconnect()
 	{
 		return m_OnDisconnect;
 	}
 
-	void ConnectionManager::Update(TimeDelta delta)
+	bool ClientListener::IsConnecting() const
+	{
+		return m_Connecting;
+	}
+
+	bool ClientListener::IsConnected() const
+	{
+		return m_ConnectionId != InvalidConnectionId;
+	}
+
+	void ClientListener::Update(TimeDelta delta)
 	{
 		if (IsConnected() && !IsConnecting())
 		{
@@ -94,32 +98,38 @@ namespace Anarchy
 			}
 			else
 			{
-				m_TimeSinceKeepAlive += delta.Milliseconds();
-				if (m_TimeSinceKeepAlive >= 1000)
+				for (const GenericCommand& command : m_Commands.GetCommands())
+				{
+					SendCommand(command);
+				}
+				m_Commands.Clear();
+				m_TimeSinceLastSentMessage += delta.Milliseconds();
+				if (m_TimeSinceLastSentMessage >= 500)
 				{
 					SendKeepAlive();
-					m_TimeSinceKeepAlive = 0;
+					BLT_INFO("Sent KeepAlive");
+					ResetTimeSinceLastSentMessage();
 				}
 			}
 		}
 	}
 
-	void ConnectionManager::SendKeepAlive()
+	void ClientListener::SendKeepAlive()
 	{
 		BLT_ASSERT(IsConnected(), "Must be connected to send keep alive");
 		KeepAlivePacket packet;
 		auto message = CreateMessage(packet);
 		HandleOutgoingMessage(message, false);
-		GetServerSocket().SendPacket(MessageType::KeepAlive, message);
+		GetClientSocket().SendPacket(MessageType::KeepAlive, message);
 	}
 
-	void ConnectionManager::OnKeepAlive(const NetworkMessage<KeepAlivePacket>& message)
+	void ClientListener::OnKeepAlive(const NetworkMessage<KeepAlivePacket>& message)
 	{
 		HandleIncomingMessage(message, false);
 		ResetTimeSinceLastReceivedMessage();
 	}
 
-	void ConnectionManager::OnForceDisconnect(const NetworkMessage<ForceDisconnectMessage>& message)
+	void ClientListener::OnForceDisconnect(const NetworkMessage<ForceDisconnectMessage>& message)
 	{
 		if (IsSeqIdGreater(message.Header.SequenceId, GetRemoteSequenceId()))
 		{
@@ -128,7 +138,7 @@ namespace Anarchy
 		}
 	}
 
-	ClientSocketApi::Promise<ServerConnectionResponse> ConnectionManager::Connect(const ServerConnectionRequest& request, double timeoutSeconds)
+	ClientSocketApi::Promise<ServerConnectionResponse> ClientListener::Connect(const ServerConnectionRequest& request, double timeoutSeconds)
 	{
 		BLT_ASSERT(!IsConnected() && !IsConnecting(), "Cannot connect now");
 		m_Connecting = true;
@@ -136,6 +146,7 @@ namespace Anarchy
 		return TaskManager::Get().Run([this, request, timeoutSeconds]()
 			{
 				IncrementSequenceId();
+				ResetTimeSinceLastSentMessage();
 				auto message = CreateMessage(request);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<ServerConnectionResponse>(message, timeoutSeconds);
@@ -151,13 +162,14 @@ namespace Anarchy
 			});
 	}
 
-	ClientSocketApi::Promise<ServerDisconnectResponse> ConnectionManager::Disconnect(const ServerDisconnectRequest& request, double timeoutSeconds)
+	ClientSocketApi::Promise<ServerDisconnectResponse> ClientListener::Disconnect(const ServerDisconnectRequest& request, double timeoutSeconds)
 	{
 		BLT_ASSERT(IsConnected() && !IsConnecting(), "Cannot disconnect now");
 		return TaskManager::Get().Run([this, request, timeoutSeconds]()
 			{
 				m_Bus.Flush();
 				IncrementSequenceId();
+				ResetTimeSinceLastSentMessage();
 				auto message = CreateMessage(request);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<ServerDisconnectResponse>(message, timeoutSeconds);
@@ -172,12 +184,13 @@ namespace Anarchy
 			});
 	}
 
-	ClientSocketApi::Promise<CreateCharacterResponse> ConnectionManager::CreateCharacter(const CreateCharacterRequest& request, double timeoutSeconds)
+	ClientSocketApi::Promise<CreateCharacterResponse> ClientListener::CreateCharacter(const CreateCharacterRequest& request, double timeoutSeconds)
 	{
 		BLT_ASSERT(IsConnected(), "Must be connected");
 		return TaskManager::Get().Run([this, request, timeoutSeconds]()
 			{
 				IncrementSequenceId();
+				ResetTimeSinceLastSentMessage();
 				auto message = CreateMessage(request);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<CreateCharacterResponse>(message, timeoutSeconds);
@@ -185,18 +198,19 @@ namespace Anarchy
 				{
 					ResetTimeSinceLastReceivedMessage();
 					SetRemoteSequenceId(response->Header.SequenceId);
-					return MakeOptional(response);					
+					return MakeOptional(response);
 				}
 				return std::optional<CreateCharacterResponse>();
 			});
 	}
 
-	ClientSocketApi::Promise<GetEntitiesResponse> ConnectionManager::GetEntities(const GetEntitiesRequest& request, double timeoutSeconds)
+	ClientSocketApi::Promise<GetEntitiesResponse> ClientListener::GetEntities(const GetEntitiesRequest& request, double timeoutSeconds)
 	{
 		BLT_ASSERT(IsConnected(), "Must be connected");
 		return TaskManager::Get().Run([this, request, timeoutSeconds]()
 			{
 				IncrementSequenceId();
+				ResetTimeSinceLastSentMessage();
 				auto message = CreateMessage(request);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<GetEntitiesResponse>(message, timeoutSeconds);
@@ -210,7 +224,7 @@ namespace Anarchy
 			});
 	}
 
-	void ConnectionManager::SpawnEntities(const NetworkMessage<SpawnEntitiesRequest>& request)
+	void ClientListener::SpawnEntities(const NetworkMessage<SpawnEntitiesRequest>& request)
 	{
 		if (IsSeqIdGreater(request.Header.SequenceId, GetRemoteSequenceId()))
 		{
@@ -224,7 +238,7 @@ namespace Anarchy
 		}
 	}
 
-	void ConnectionManager::DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request)
+	void ClientListener::DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request)
 	{
 		if (IsSeqIdGreater(request.Header.SequenceId, GetRemoteSequenceId()))
 		{
@@ -238,7 +252,7 @@ namespace Anarchy
 		}
 	}
 
-	void ConnectionManager::UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request)
+	void ClientListener::UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request)
 	{
 		if (IsSeqIdGreater(request.Header.SequenceId, GetRemoteSequenceId()))
 		{
@@ -253,33 +267,42 @@ namespace Anarchy
 		}
 	}
 
-	void ConnectionManager::SendMoveCommand(const EntityCommand<TileMovement>& command)
+	void ClientListener::SendCommand(const GenericCommand& command)
 	{
+		IncrementSequenceId();
+		ResetTimeSinceLastSentMessage();
+		auto message = CreateMessage(command);
+		HandleOutgoingMessage(message);
+		GetClientSocket().SendPacket(MessageType::InputCommand, message);
 	}
 
-	void ConnectionManager::DisconnectInternal()
+	void ClientListener::DisconnectInternal()
 	{
 		m_Bus.Flush();
-		m_ConnectionId = InvalidConnectionId;
 		OnDisconnect().Emit({});
 	}
 
-	void ConnectionManager::IncrementSequenceId(seqid_t amount)
+	void ClientListener::IncrementSequenceId(seqid_t amount)
 	{
 		m_SequenceId += amount;
 	}
 
-	void ConnectionManager::SetRemoteSequenceId(seqid_t seqId)
+	void ClientListener::SetRemoteSequenceId(seqid_t seqId)
 	{
 		m_RemoteSequenceId = seqId;
 	}
 
-	void ConnectionManager::ResetTimeSinceLastReceivedMessage()
+	void ClientListener::ResetTimeSinceLastReceivedMessage()
 	{
-		m_TimeSinceLastReceivedMessage = 0;
+		m_TimeSinceLastReceivedMessage = 0.0;
 	}
 
-	void ConnectionManager::HandlePacketAcked(seqid_t sequenceId, PacketData* data) const
+	void ClientListener::ResetTimeSinceLastSentMessage()
+	{
+		m_TimeSinceLastSentMessage = 0.0;
+	}
+
+	void ClientListener::HandlePacketAcked(seqid_t sequenceId, PacketData* data) const
 	{
 		data->Acked = true;
 		uint64_t deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(GetTimestamp() - data->Timestamp).count();

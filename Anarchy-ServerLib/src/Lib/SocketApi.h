@@ -18,7 +18,7 @@ namespace Anarchy
 	class ServerSocketApi
 	{
 	public:
-		virtual void OnKeepAlive(const ServerRequest<ServerNetworkMessage<KeepAlivePacket>>& packet) = 0;
+		virtual void OnKeepAlive(const ServerNetworkMessage<KeepAlivePacket>& packet) = 0;
 		virtual void SendKeepAlive(const std::vector<connid_t>& connections) = 0;
 		virtual void ForceDisconnectConnections(const std::vector<connid_t>& connectionIds) = 0;
 
@@ -32,7 +32,7 @@ namespace Anarchy
 		virtual void DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request) = 0;
 		virtual void UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request) = 0;
 
-		virtual void OnMoveCommand(const ServerNetworkMessage<EntityCommand<TileMovement>>& command) = 0;
+		virtual void OnCommand(const ServerNetworkMessage<GenericCommand>& command) = 0;
 	};
 
 	class ClientSocketApi
@@ -55,7 +55,7 @@ namespace Anarchy
 		virtual void DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request) = 0;
 		virtual void UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request) = 0;
 
-		virtual void SendMoveCommand(const EntityCommand<TileMovement>& command) = 0;
+		virtual void SendCommand(const GenericCommand& command) = 0;
 	};
 
 }

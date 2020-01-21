@@ -1,5 +1,7 @@
 #pragma once
 #include "Lib/Authentication.h"
+#include "Core/Events/EventEmitter.h"
+#include "Core/Events/EventBus.h"
 
 namespace Anarchy
 {
@@ -11,7 +13,7 @@ namespace Anarchy
 		InputMemoryStream Data;
 	};
 
-	class ServerConnection
+	class ClientSocket
 	{
 	private:
 		SocketAddress m_Address;
@@ -20,11 +22,12 @@ namespace Anarchy
 		EventEmitter<ServerMessageReceived> m_OnMessage;
 
 	public:
-		ServerConnection(const SocketAddress& address);
-		ServerConnection(const ServerConnection& other) = delete;
-		ServerConnection& operator=(const ServerConnection& other) = delete;
-		ServerConnection(ServerConnection&& other) = delete;
-		ServerConnection& operator=(ServerConnection&& other) = delete;
+		ClientSocket(const SocketAddress& address);
+		ClientSocket(const ClientSocket& other) = delete;
+		ClientSocket& operator=(const ClientSocket& other) = delete;
+		ClientSocket(ClientSocket&& other) = delete;
+		ClientSocket& operator=(ClientSocket&& other) = delete;
+		~ClientSocket() = default;
 
 		const SocketAddress& GetAddress() const;
 		const UDPsocket& GetSocket() const;

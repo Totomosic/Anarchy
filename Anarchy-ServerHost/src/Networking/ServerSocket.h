@@ -27,6 +27,11 @@ namespace Anarchy
 
 	public:
 		ServerSocket(const SocketAddress& address);
+		ServerSocket(const ServerSocket& other) = delete;
+		ServerSocket& operator=(const ServerSocket& other) = delete;
+		ServerSocket(ServerSocket&& other) = delete;
+		ServerSocket& operator=(ServerSocket&& other) = delete;
+		~ServerSocket() = default;
 
 		const SocketAddress& GetAddress() const;
 		const UDPsocket& GetSocket() const;

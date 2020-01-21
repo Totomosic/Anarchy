@@ -2,6 +2,7 @@
 #include "Components/NetworkId.h"
 #include "Components/PrefabId.h"
 #include "Components/DimensionId.h"
+#include "Components/TilePosition.h"
 
 namespace Anarchy
 {
@@ -77,7 +78,14 @@ namespace Anarchy
 	{
 		EntityHandle entity = CreateEntity(data.NetworkId, data.PrefabId);
 		entity.Assign<DimensionId>(DimensionId{ data.DimensionId });
-		entity.GetTransform()->SetLocalPosition(data.TilePosition.x, data.TilePosition.y, 0.0f);
+		if (entity.HasComponent<TilePosition>())
+		{
+			entity.GetComponent<TilePosition>()->Position = data.TilePosition;
+		}
+		if (entity.HasComponent<Transform>())
+		{
+			entity.GetTransform()->SetLocalPosition(data.TilePosition.x, data.TilePosition.y, 0.0f);
+		}
 		return entity;
 	}
 
@@ -92,8 +100,8 @@ namespace Anarchy
 
 	Vector2i EntityCollection::GetEntityTilePosition(const EntityHandle& entity) const
 	{
-		Vector2f xy = entity.GetTransform()->Position().xy();
-		return { (int)roundf(xy.x), (int)roundf(xy.y) };
+		Vector2i xy = entity.GetComponent<TilePosition>()->Position;
+		return xy;
 	}
 
 	EntityData EntityCollection::GetDataFromEntity(const EntityHandle& entity) const

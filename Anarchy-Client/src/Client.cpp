@@ -28,7 +28,7 @@ namespace Anarchy
 			ClientState::Get().GetConnection().Update(Time::Get().RenderingTimeline().DeltaTime());
 			if (Input::Get().KeyPressed(Keycode::Esc))
 			{
-				Task t = ClientState::Get().GetConnection().Disconnect({}, 2.0);
+				Task t = ClientState::Get().GetConnection().GetSocketApi().Disconnect({}, 2.0);
 			}
 		}		
 	}
@@ -44,7 +44,7 @@ namespace Anarchy
 		{
 			if (ClientState::Get().GetConnection().IsConnected())
 			{
-				ClientState::Get().GetConnection().Disconnect({}, 5.0).Wait();
+				ClientState::Get().GetConnection().GetSocketApi().Disconnect({}, 5.0).Wait();
 			}
 			ClientState::Get().CloseConnection();
 		}

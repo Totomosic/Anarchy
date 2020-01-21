@@ -1,6 +1,8 @@
 #include "PrefabRegistry.h"
 #include "Graphics/Resources/ResourceManager.h"
 
+#include "Entities/Components/TilePosition.h"
+
 namespace Anarchy
 {
 
@@ -42,9 +44,11 @@ namespace Anarchy
 	{
 		Register([](Layer& layer, bool addGraphicsComponents)
 			{
-				EntityHandle entity = layer.GetFactory().CreateTransform(Transform());
+				EntityHandle entity = layer.GetFactory().Empty();
+				entity.Assign<TilePosition>();
 				if (addGraphicsComponents)
 				{
+					entity.Assign<Transform>();
 					Mesh mesh;
 					mesh.Models.push_back({ ResourceManager::Get().Models().Square() });
 					mesh.Materials.push_back(ResourceManager::Get().Materials().Default(Color::White));

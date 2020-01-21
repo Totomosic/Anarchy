@@ -3,6 +3,7 @@
 #include "Events.h"
 
 #include "ClientState.h"
+#include "Entities/Systems/PlayerControlSystem.h"
 
 namespace Anarchy
 {
@@ -40,7 +41,7 @@ namespace Anarchy
 					std::string port = data.Server.substr(colon + 1);
 					SocketAddress address(host, port);
 					ClientState::Get().InitializeConnection(address);
-					ClientState::Get().GetConnection().OnDisconnect().AddEventListener([&scene](Event<ServerDisconnect>& e)
+					ClientState::Get().GetConnection().GetSocketApi().OnDisconnect().AddEventListener([&scene](Event<ServerDisconnect>& e)
 						{
 							SceneManager::Get().SetCurrentScene(scene);
 							e.StopPropagation();
@@ -51,7 +52,7 @@ namespace Anarchy
 
 					UIRectangle& connectingIcon = background.CreateRectangle(30, 30, Color::Red, Transform({ 170, -60, 1 }));
 
-					Task<std::optional<ServerConnectionResponse>> response = ClientState::Get().GetConnection().Connect(request, 2.0);
+					Task<std::optional<ServerConnectionResponse>> response = ClientState::Get().GetConnection().GetSocketApi().Connect(request, 2.0);
 					response.ContinueWithOnMainThread([&gameScene, &connectingIcon](std::optional<ServerConnectionResponse> response)
 						{
 							connectingIcon.Remove();
@@ -76,7 +77,7 @@ namespace Anarchy
 		scene.OnLoad().AddEventListener([&scene](Event<SceneLoadEvent>& e)
 			{
 				CreateCharacterRequest request;
-				std::optional<CreateCharacterResponse> character = ClientState::Get().GetConnection().CreateCharacter(request, 5.0).Result();
+				std::optional<CreateCharacterResponse> character = ClientState::Get().GetConnection().GetSocketApi().CreateCharacter(request, 5.0).Result();
 				if (character)
 				{
 					Layer& layer = scene.AddLayer();
@@ -86,8 +87,13 @@ namespace Anarchy
 					BLT_INFO("Created Character Successfully");
 					ClientState::Get().InitializeEntities(scene, layer);
 					EntityHandle player = ClientState::Get().GetEntities().CreateFromEntityData(character->Data);
+					ComponentHandle controller = player.Assign<PlayerController>();
+					controller->Speed = 1.0f;
 
-					std::optional<GetEntitiesResponse> entities = ClientState::Get().GetConnection().GetEntities({ 0 }, 5.0).Result();
+					CommandBuffer& commands = ClientState::Get().GetConnection().GetSocketApi().GetCommandBuffer();
+					layer.Systems().Add<PlayerControlSystem>(&commands);
+
+					std::optional<GetEntitiesResponse> entities = ClientState::Get().GetConnection().GetSocketApi().GetEntities({ 0 }, 5.0).Result();
 					if (entities)
 					{
 						for (const EntityData& data : entities->Entities)

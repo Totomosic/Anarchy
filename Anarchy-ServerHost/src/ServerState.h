@@ -1,7 +1,7 @@
 #pragma once
-#include "Connections/ConnectionsManager.h"
-#include "ServerSocket.h"
-#include "ServerListener.h"
+#include "Networking/Connections/ConnectionsManager.h"
+#include "Networking/ServerSocket.h"
+#include "Networking/ServerListener.h"
 #include "Entities/ServerEntityCollection.h"
 
 #include "Debug/DebugCommandManager.h"

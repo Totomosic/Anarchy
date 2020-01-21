@@ -1,13 +1,12 @@
 #pragma once
 #include "clientpch.h"
+#include "Lib/Entities/CommandBuffer.h"
 
 namespace Anarchy
 {
 
 	class Client : public Application
 	{
-	private:
-
 	public:
 		void Init() override;
 		void Tick() override;

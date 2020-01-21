@@ -10,6 +10,8 @@ namespace Anarchy
 		IdManager<entityid_t> m_NetworkIdManager;
 		ScopedEventListener m_Listener;
 
+		std::vector<entityid_t> m_DirtyEntities;
+
 	public:
 		ServerEntityCollection(Scene& scene, Layer& layer);
 
@@ -20,6 +22,10 @@ namespace Anarchy
 		EntityHandle CreateEntity(entityid_t networkId, prefab_t prefabId, connid_t ownerConnectionId);
 		EntityHandle CreateFromEntityData(const EntityData& data, connid_t ownerConnectionId);
 		std::vector<entityid_t> GetAllIdsOwnedBy(connid_t connectionId) const;
+
+		const std::vector<entityid_t>& GetDirtyEntities() const;
+		void SetEntityDirty(entityid_t entityId);
+		void ClearDirtyEntities();
 	};
 
 }

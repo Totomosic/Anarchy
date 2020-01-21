@@ -25,7 +25,7 @@ namespace Anarchy
 		DestroyEntities,
 		UpdateEntities,
 
-		EntityMoveCommand
+		InputCommand
 	};
 
 	ANCH_DEFINE_DEFAULT_SERIALIZE(MessageType);

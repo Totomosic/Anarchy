@@ -2,6 +2,7 @@
 #include "Server.h"
 
 #include "Lib/Authentication.h"
+#include "Lib/GameMessages.h"
 #include "ServerState.h"
 
 #include "Utils/Config.h"
@@ -18,6 +19,13 @@ namespace Anarchy
 		Layer& gameLayer = gameScene.AddLayer();
 		SocketAddress address = LoadServerConfig();
 		ServerState::Get().Initialize(address, gameScene, gameLayer);
+		ServerState::Get().GetSocketApi().SetCommandBuffer(&m_Commands);
+
+		ServerEntityCollection& entities = ServerState::Get().GetEntities();
+		m_Commands.RegisterHandler<TileMovement>(CommandType::EntityMove, [&entities](const InputCommand<TileMovement>& command)
+			{
+				entities.SetEntityDirty(command.NetworkId);
+			});
 	}
 
 	void Server::Tick()
@@ -37,8 +45,22 @@ namespace Anarchy
 
 		ServerState::Get().GetSocketApi().Update(Time::Get().RenderingTimeline().DeltaTime());
 
+		m_Commands.ProcessAllCommands();
+
+		ServerEntityCollection& entities = ServerState::Get().GetEntities();
+		const std::vector<entityid_t> dirtyEntities = entities.GetDirtyEntities();
 		UpdateEntitiesRequest request;
+		for (entityid_t entity : dirtyEntities)
+		{
+			EntityHandle e = entities.GetEntityByNetworkId(entity);
+			EntityData data = entities.GetDataFromEntity(e);
+			EntityDelta delta;
+			delta.NetworkId = entity;
+			delta.TilePosition = data.TilePosition;
+			request.Updates.push_back(delta);
+		}
 		ServerState::Get().GetSocketApi().UpdateEntities(ServerState::Get().GetConnections().GetAllConnectionIds(), request);
+		entities.ClearDirtyEntities();
 	}
 
 	void Server::Render()
