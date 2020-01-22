@@ -19,10 +19,10 @@ namespace Anarchy
 		Layer& gameLayer = gameScene.AddLayer();
 		SocketAddress address = LoadServerConfig();
 		ServerState::Get().Initialize(address, gameScene, gameLayer);
-		ServerState::Get().GetSocketApi().SetCommandBuffer(&m_Commands);
+		ServerState::Get().GetSocketApi().SetActionBuffer(&m_Actions);
 
 		ServerEntityCollection& entities = ServerState::Get().GetEntities();
-		m_Commands.RegisterHandler<TileMovement>(CommandType::EntityMove, [&entities](const InputCommand<TileMovement>& command)
+		m_Actions.RegisterHandler<TileMovement>(ActionType::EntityMove, [&entities](const InputAction<TileMovement>& command)
 			{
 				entities.SetEntityDirty(command.NetworkId);
 			});
@@ -45,7 +45,7 @@ namespace Anarchy
 
 		ServerState::Get().GetSocketApi().Update(Time::Get().RenderingTimeline().DeltaTime());
 
-		m_Commands.ProcessAllCommands();
+		m_Actions.ProcessAllActions();
 
 		ServerEntityCollection& entities = ServerState::Get().GetEntities();
 		const std::vector<entityid_t> dirtyEntities = entities.GetDirtyEntities();

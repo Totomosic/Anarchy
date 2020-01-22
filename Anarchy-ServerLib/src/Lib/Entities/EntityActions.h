@@ -4,62 +4,62 @@
 namespace Anarchy
 {
 
-	enum class CommandType
+	enum class ActionType
 	{
 		EntityMove
 	};
 
-	ANCH_DEFINE_DEFAULT_SERIALIZE(CommandType);
-	ANCH_DEFINE_DEFAULT_DESERIALIZE(CommandType);
+	ANCH_DEFINE_DEFAULT_SERIALIZE(ActionType);
+	ANCH_DEFINE_DEFAULT_DESERIALIZE(ActionType);
 
-	struct GenericCommand
+	struct GenericAction
 	{
 	public:
 		static constexpr MessageType Type = MessageType::InputCommand;
 	public:
-		Anarchy::CommandType CommandType;
-		std::shared_ptr<OutputMemoryStream> CommandData;
+		Anarchy::ActionType Action;
+		std::shared_ptr<OutputMemoryStream> ActionData;
 	};
 
-	inline void Serialize(OutputMemoryStream& stream, const GenericCommand& command)
+	inline void Serialize(OutputMemoryStream& stream, const GenericAction& command)
 	{
-		Serialize(stream, command.CommandType);
-		Serialize(stream, command.CommandData->GetRemainingDataSize());
-		stream.Write(command.CommandData->GetBufferPtr(), command.CommandData->GetRemainingDataSize());
+		Serialize(stream, command.Action);
+		Serialize(stream, command.ActionData->GetRemainingDataSize());
+		stream.Write(command.ActionData->GetBufferPtr(), command.ActionData->GetRemainingDataSize());
 	}
 
-	inline void Deserialize(InputMemoryStream& stream, GenericCommand& command)
+	inline void Deserialize(InputMemoryStream& stream, GenericAction& command)
 	{
-		Deserialize(stream, command.CommandType);
+		Deserialize(stream, command.Action);
 		uint32_t size;
 		Deserialize(stream, size);
-		command.CommandData = std::make_shared<OutputMemoryStream>(size);
-		command.CommandData->Write(stream.GetBufferPtr(), size);
+		command.ActionData = std::make_shared<OutputMemoryStream>(size);
+		command.ActionData->Write(stream.GetBufferPtr(), size);
 	}
 
 	template<typename T>
-	struct InputCommand
+	struct InputAction
 	{
 	public:
 		static constexpr MessageType Type = MessageType::InputCommand;
 
 	public:
 		entityid_t NetworkId;
-		T Command;
+		T Action;
 	};
 
 	template<typename T>
-	inline void Serialize(OutputMemoryStream& stream, const InputCommand<T>& command)
+	inline void Serialize(OutputMemoryStream& stream, const InputAction<T>& command)
 	{
 		Serialize(stream, command.NetworkId);
-		Serialize(stream, command.Command);
+		Serialize(stream, command.Action);
 	}
 
 	template<typename T>
-	inline void Deserialize(InputMemoryStream& stream, InputCommand<T>& command)
+	inline void Deserialize(InputMemoryStream& stream, InputAction<T>& command)
 	{
 		Deserialize(stream, command.NetworkId);
-		Deserialize(stream, command.Command);
+		Deserialize(stream, command.Action);
 	}
 
 	// =======================================================================================
@@ -69,7 +69,7 @@ namespace Anarchy
 	struct TileMovement
 	{
 	public:
-		static constexpr CommandType Type = CommandType::EntityMove;
+		static constexpr ActionType Type = ActionType::EntityMove;
 	public:
 		Vector2i Movement;
 		float Speed;

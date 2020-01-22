@@ -11,7 +11,7 @@ namespace Anarchy
 
 	ClientListener::ClientListener(ClientSocket& socket)
 		: m_Bus(), m_TaskManager(m_Bus), m_OnDisconnect(m_Bus.GetEmitter<ServerDisconnect>(ClientEvents::DisconnectedFromServer)), m_ConnectionId(InvalidConnectionId), m_Connecting(false),
-		m_Socket(socket), m_SequenceId(0), m_RemoteSequenceId(0), m_Listener(), m_MessageHandlers(), m_TimeSinceLastReceivedMessage(0), m_TimeSinceLastSentMessage(0), m_ReceivedMessages(), m_SentMessages(), m_Commands()
+		m_Socket(socket), m_SequenceId(0), m_RemoteSequenceId(0), m_Listener(), m_MessageHandlers(), m_TimeSinceLastReceivedMessage(0), m_TimeSinceLastSentMessage(0), m_ReceivedMessages(), m_SentMessages(), m_Actions()
 	{
 		Register<KeepAlivePacket>(ANCH_BIND_LISTENER_FN(ClientListener::OnKeepAlive));
 
@@ -53,9 +53,9 @@ namespace Anarchy
 		return m_ConnectionId;
 	}
 
-	CommandBuffer& ClientListener::GetCommandBuffer()
+	ActionBuffer& ClientListener::GetActionBuffer()
 	{
-		return m_Commands;
+		return m_Actions;
 	}
 
 	seqid_t ClientListener::GetSequenceId() const
@@ -98,11 +98,11 @@ namespace Anarchy
 			}
 			else
 			{
-				for (const GenericCommand& command : m_Commands.GetCommands())
+				for (const GenericAction& action : m_Actions.GetActions())
 				{
-					SendCommand(command);
+					SendAction(action);
 				}
-				m_Commands.Clear();
+				m_Actions.Clear();
 				m_TimeSinceLastSentMessage += delta.Milliseconds();
 				if (m_TimeSinceLastSentMessage >= 500)
 				{
@@ -267,11 +267,11 @@ namespace Anarchy
 		}
 	}
 
-	void ClientListener::SendCommand(const GenericCommand& command)
+	void ClientListener::SendAction(const GenericAction& action)
 	{
 		IncrementSequenceId();
 		ResetTimeSinceLastSentMessage();
-		auto message = CreateMessage(command);
+		auto message = CreateMessage(action);
 		HandleOutgoingMessage(message);
 		GetClientSocket().SendPacket(MessageType::InputCommand, message);
 	}
@@ -279,6 +279,7 @@ namespace Anarchy
 	void ClientListener::DisconnectInternal()
 	{
 		m_Bus.Flush();
+		m_ConnectionId = InvalidConnectionId;
 		OnDisconnect().Emit({});
 	}
 

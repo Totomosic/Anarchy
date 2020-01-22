@@ -10,13 +10,13 @@ namespace Anarchy
 #define ANCH_SERVER_BIND_FN(fn) std::bind(&fn, this, std::placeholders::_1)
 
 	ServerListener::ServerListener(ServerSocket& socket)
-		: m_Listener(), m_ServerSocket(socket), m_MessageHandlers(), m_CommandBuffer(), m_Mutex()
+		: m_Listener(), m_ServerSocket(socket), m_MessageHandlers(), m_ActionBuffer(), m_Mutex()
 	{
 		Register<ServerConnectionResponse, ServerConnectionRequest>(ANCH_SERVER_BIND_FN(ServerListener::Connect));
 		Register<ServerDisconnectResponse, ServerDisconnectRequest>(ANCH_SERVER_BIND_FN(ServerListener::Disconnect));
 		Register<CreateCharacterResponse, CreateCharacterRequest>(ANCH_SERVER_BIND_FN(ServerListener::CreateCharacter));
 		Register<GetEntitiesResponse, GetEntitiesRequest>(ANCH_SERVER_BIND_FN(ServerListener::GetEntities));
-		Register<GenericCommand>(ANCH_SERVER_BIND_FN(ServerListener::OnCommand));
+		Register<GenericAction>(ANCH_SERVER_BIND_FN(ServerListener::OnAction));
 
 		Register<KeepAlivePacket>(ANCH_SERVER_BIND_FN(ServerListener::OnKeepAlive));
 
@@ -32,15 +32,15 @@ namespace Anarchy
 			});
 	}
 
-	CommandBuffer* ServerListener::GetCommandBuffer() const
+	ActionBuffer* ServerListener::GetActionBuffer() const
 	{
-		return m_CommandBuffer;
+		return m_ActionBuffer;
 	}
 
-	void ServerListener::SetCommandBuffer(CommandBuffer* buffer)
+	void ServerListener::SetActionBuffer(ActionBuffer* buffer)
 	{
 		std::scoped_lock<std::mutex> lock(m_Mutex);
-		m_CommandBuffer = buffer;
+		m_ActionBuffer = buffer;
 	}
 
 	void ServerListener::Update(TimeDelta delta)
@@ -200,19 +200,19 @@ namespace Anarchy
 		UpdateEntitiesInternal(connections, request);
 	}
 
-	void ServerListener::OnCommand(const ServerNetworkMessage<GenericCommand>& command)
+	void ServerListener::OnAction(const ServerNetworkMessage<GenericAction>& action)
 	{
 		std::scoped_lock<std::mutex> lock(m_Mutex);
-		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Command Received", command.ConnectionId, command.Header.SequenceId);
-		ClientConnection* connection = GetConnection(command.ConnectionId);
+		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Command Received", action.ConnectionId, action.Header.SequenceId);
+		ClientConnection* connection = GetConnection(action.ConnectionId);
 		if (connection != nullptr)
 		{
-			HandleIncomingMessage(command);
-			connection->SetRemoteSequenceId(command.Header.SequenceId);
+			HandleIncomingMessage(action);
+			connection->SetRemoteSequenceId(action.Header.SequenceId);
 			connection->ResetTimeSinceLastPacket();
-			if (m_CommandBuffer != nullptr)
+			if (m_ActionBuffer != nullptr)
 			{
-				m_CommandBuffer->PushCommand(command.Message);
+				m_ActionBuffer->PushAction(action.Message);
 			}
 		}
 	}

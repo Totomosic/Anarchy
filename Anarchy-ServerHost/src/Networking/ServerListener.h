@@ -2,7 +2,7 @@
 #include "ServerSocket.h"
 #include "Lib/SocketApi.h"
 #include "Lib/SequenceBuffer.h"
-#include "Lib/Entities/CommandBuffer.h"
+#include "Lib/Entities/ActionBuffer.h"
 #include "Connections/ClientConnection.h"
 #include "Core/Time/Time.h"
 
@@ -15,15 +15,15 @@ namespace Anarchy
 		ScopedEventListener m_Listener;
 		ServerSocket& m_ServerSocket;
 		std::unordered_map<MessageType, std::function<void(const SocketAddress&, InputMemoryStream&)>> m_MessageHandlers;
-		CommandBuffer* m_CommandBuffer;
+		ActionBuffer* m_ActionBuffer;
 
 		std::mutex m_Mutex;
 
 	public:
 		ServerListener(ServerSocket& socket);
 
-		CommandBuffer* GetCommandBuffer() const;
-		void SetCommandBuffer(CommandBuffer* buffer);
+		ActionBuffer* GetActionBuffer() const;
+		void SetActionBuffer(ActionBuffer* buffer);
 
 		template<typename TResponse, typename TRequest>
 		void Register(const std::function<std::optional<TResponse>(const ServerRequest<ServerNetworkMessage<TRequest>>&)>& callback)
@@ -75,7 +75,7 @@ namespace Anarchy
 		void DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request) override;
 		void UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request) override;
 
-		void OnCommand(const ServerNetworkMessage<GenericCommand>& command) override;
+		void OnAction(const ServerNetworkMessage<GenericAction>& command) override;
 
 	private:
 		void SendKeepAliveInternal(const std::vector<connid_t>& connections);

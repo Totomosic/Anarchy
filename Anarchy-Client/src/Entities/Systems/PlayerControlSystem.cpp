@@ -7,14 +7,14 @@
 namespace Anarchy
 {
 
-	PlayerControlSystem::PlayerControlSystem(CommandBuffer* commandBuffer)
-		: m_CommandBuffer(commandBuffer)
+	PlayerControlSystem::PlayerControlSystem(ActionBuffer* actionBuffer)
+		: m_ActionBuffer(actionBuffer)
 	{
 	}
 
 	void PlayerControlSystem::Update(EntityManager& manager, TimeDelta dt)
 	{
-		if (m_CommandBuffer != nullptr)
+		if (m_ActionBuffer != nullptr)
 		{
 			for (EntityHandle entity : manager.GetEntitiesWith<PlayerController, TilePosition, NetworkId>())
 			{
@@ -39,11 +39,11 @@ namespace Anarchy
 				if (direction.x != 0 || direction.y != 0)
 				{
 					entityid_t networkId = entity.GetComponent<NetworkId>()->Id;
-					InputCommand<TileMovement> command;
-					command.NetworkId = networkId;
-					command.Command.Movement = direction;
-					command.Command.Speed = entity.GetComponent<PlayerController>()->Speed;
-					m_CommandBuffer->PushCommand(command);
+					InputAction<TileMovement> action;
+					action.NetworkId = networkId;
+					action.Action.Movement = direction;
+					action.Action.Speed = entity.GetComponent<PlayerController>()->Speed;
+					m_ActionBuffer->PushAction(action);
 				}
 			}
 		}

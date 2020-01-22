@@ -1,7 +1,7 @@
 #pragma once
 #include "Authentication.h"
 #include "GameMessages.h"
-#include "Entities/EntityCommands.h"
+#include "Entities/EntityActions.h"
 #include "Core/Tasks/Task.h"
 
 namespace Anarchy
@@ -32,7 +32,7 @@ namespace Anarchy
 		virtual void DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request) = 0;
 		virtual void UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request) = 0;
 
-		virtual void OnCommand(const ServerNetworkMessage<GenericCommand>& command) = 0;
+		virtual void OnAction(const ServerNetworkMessage<GenericAction>& command) = 0;
 	};
 
 	class ClientSocketApi
@@ -55,7 +55,7 @@ namespace Anarchy
 		virtual void DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request) = 0;
 		virtual void UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request) = 0;
 
-		virtual void SendCommand(const GenericCommand& command) = 0;
+		virtual void SendAction(const GenericAction& command) = 0;
 	};
 
 }

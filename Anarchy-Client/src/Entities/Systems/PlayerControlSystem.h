@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Scene/Systems/System.h"
 #include "../Components/PlayerController.h"
-#include "Lib/Entities/CommandBuffer.h"
+#include "Lib/Entities/ActionBuffer.h"
 
 namespace Anarchy
 {
@@ -9,10 +9,10 @@ namespace Anarchy
 	class PlayerControlSystem : public System<PlayerControlSystem>
 	{
 	private:
-		CommandBuffer* m_CommandBuffer;
+		ActionBuffer* m_ActionBuffer;
 
 	public:
-		PlayerControlSystem(CommandBuffer* commandBuffer);
+		PlayerControlSystem(ActionBuffer* actionBuffer);
 
 		void Update(EntityManager& manager, TimeDelta dt) override;
 	};

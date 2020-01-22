@@ -1,7 +1,7 @@
 #pragma once
 #include "serverpch.h"
 #include "Engine/Application.h"
-#include "Lib/Entities/CommandBuffer.h"
+#include "Lib/Entities/ActionBuffer.h"
 
 namespace Anarchy
 {
@@ -9,7 +9,7 @@ namespace Anarchy
 	class Server : public Application
 	{
 	private:
-		CommandBuffer m_Commands;
+		ActionBuffer m_Actions;
 
 	public:
 		void Init() override;

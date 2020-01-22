@@ -90,7 +90,7 @@ namespace Anarchy
 					ComponentHandle controller = player.Assign<PlayerController>();
 					controller->Speed = 1.0f;
 
-					CommandBuffer& commands = ClientState::Get().GetConnection().GetSocketApi().GetCommandBuffer();
+					ActionBuffer& commands = ClientState::Get().GetConnection().GetSocketApi().GetActionBuffer();
 					layer.Systems().Add<PlayerControlSystem>(&commands);
 
 					std::optional<GetEntitiesResponse> entities = ClientState::Get().GetConnection().GetSocketApi().GetEntities({ 0 }, 5.0).Result();

@@ -2,7 +2,7 @@
 #include "ClientSocket.h"
 #include "Lib/SequenceBuffer.h"
 #include "Lib/SocketApi.h"
-#include "Lib/Entities/CommandBuffer.h"
+#include "Lib/Entities/ActionBuffer.h"
 #include "Core/Tasks/TaskManager.h"
 #include "Core/Time/TimeDelta.h"
 
@@ -39,7 +39,7 @@ namespace Anarchy
 		SequenceBuffer m_ReceivedMessages;
 		SequenceBuffer m_SentMessages;
 
-		CommandBuffer m_Commands;
+		ActionBuffer m_Actions;
 
 	public:
 		ClientListener(ClientSocket& socket);
@@ -54,7 +54,7 @@ namespace Anarchy
 		bool IsConnected() const;
 
 		connid_t GetConnectionId() const;
-		CommandBuffer& GetCommandBuffer();
+		ActionBuffer& GetActionBuffer();
 
 		void Update(TimeDelta delta);
 
@@ -72,7 +72,7 @@ namespace Anarchy
 		void DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request) override;
 		void UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request) override;
 
-		void SendCommand(const GenericCommand& command) override;
+		void SendAction(const GenericAction& command) override;
 
 		template<typename TRequest>
 		void Register(const std::function<void(const NetworkMessage<TRequest>&)>& callback)

@@ -12,6 +12,7 @@ namespace Anarchy
 		info.WindowInfo.Title = "Anarchy";
 		info.WindowInfo.Width = 1280;
 		info.WindowInfo.Height = 720;
+		info.WindowInfo.Resizable = false;
 		Engine e(info);
 		e.SetApplication<Client>();
 		e.Run();
