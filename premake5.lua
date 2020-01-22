@@ -8,6 +8,11 @@ workspace "Anarchy"
         "Dist"
     }
 
+    flags
+    {
+        "MultiProcessorCompile"
+    }
+
 -- Path to directory containing Bolt-Core
 BoltDir = "Bolt/"
 
