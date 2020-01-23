@@ -37,3 +37,5 @@ packages/
 **.cfg
 Makefile
 !Anarchy-ServerHost/src/Debug/
+*.xcodeproj/
+*.xcworkspace/
