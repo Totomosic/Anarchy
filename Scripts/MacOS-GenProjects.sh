@@ -1,3 +1,3 @@
 pushd ../
-./Bolt/vendor/bin/MacOS/premake/premake5 --os=macosx gmake2
+./Bolt/vendor/bin/MacOS/premake/premake5 --os=macosx xcode4
 popd
