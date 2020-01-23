@@ -85,6 +85,33 @@ do
                 "pthread"
             }
 
+        filter "system:macosx"
+            systemversion "latest"
+
+            defines
+            {
+                "BLT_PLATFORM_MAC",
+                "BLT_BUILD_STATIC",
+            }
+
+            links
+            {
+                "Anarchy-Utils",
+                "Bolt-Core",
+                "ResourcesLib",
+                "BoltLib",
+                "GLFW",
+                "Glad",
+                "ImGui",
+                "Lua",
+                "FreeType-GL",
+                "FreeType",                          
+                "stdc++fs",
+                "dl",
+                "X11",
+                "pthread"
+            }
+
         filter "configurations:Debug"
             defines "BLT_DEBUG"
             runtime "Debug"

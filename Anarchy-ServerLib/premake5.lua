@@ -50,7 +50,7 @@ do
             {
                 "BLT_PLATFORM_WINDOWS",
                 "BLT_BUILD_STATIC",
-                "_CRT_SECURE_NO_WARNINGS",
+                "_CRT_SECURE_NO_WARNINGS"
             }
 
         filter "system:linux"
@@ -59,8 +59,16 @@ do
             defines
             {
                 "BLT_PLATFORM_LINUX",
-                "BLT_BUILD_STATIC",
-                "_CRT_SECURE_NO_WARNINGS",
+                "BLT_BUILD_STATIC"
+            }
+
+        filter "system:macosx"
+            systemversion "latest"
+
+            defines
+            {
+                "BLT_PLATFORM_MAC",
+                "BLT_BUILD_STATIC"
             }
 
         filter "configurations:Debug"
