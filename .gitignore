@@ -39,3 +39,4 @@ Makefile
 !Anarchy-ServerHost/src/Debug/
 *.xcodeproj/
 *.xcworkspace/
+*.DS_Store
