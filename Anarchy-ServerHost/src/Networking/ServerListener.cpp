@@ -203,7 +203,7 @@ namespace Anarchy
 	void ServerListener::OnAction(const ServerNetworkMessage<GenericAction>& action)
 	{
 		std::scoped_lock<std::mutex> lock(m_Mutex);
-		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Command Received", action.ConnectionId, action.Header.SequenceId);
+		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Action Received", action.ConnectionId, action.Header.SequenceId);
 		ClientConnection* connection = GetConnection(action.ConnectionId);
 		if (connection != nullptr)
 		{
