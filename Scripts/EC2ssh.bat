@@ -1,1 +1,1 @@
-ssh -i C:/.aws/JordanNewSydney.pem ubuntu@13.210.164.248
+bash -c "ssh -i /.ssh/JordanSydney.pem ubuntu@52.64.129.71"

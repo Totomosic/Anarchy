@@ -6,6 +6,8 @@
 namespace Anarchy
 {
 
+	extern SocketAddress ServerAddress;
+
 	class Server : public Application
 	{
 	private:

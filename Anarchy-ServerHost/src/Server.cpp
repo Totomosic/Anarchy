@@ -17,8 +17,7 @@ namespace Anarchy
 	{
 		Scene& gameScene = SceneManager::Get().AddScene();
 		Layer& gameLayer = gameScene.AddLayer();
-		SocketAddress address = LoadServerConfig();
-		ServerState::Get().Initialize(address, gameScene, gameLayer);
+		ServerState::Get().Initialize(ServerAddress, gameScene, gameLayer);
 		ServerState::Get().GetSocketApi().SetActionBuffer(&m_Actions);
 
 		ServerEntityCollection& entities = ServerState::Get().GetEntities();
