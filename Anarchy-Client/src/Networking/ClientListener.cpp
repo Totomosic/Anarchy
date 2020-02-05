@@ -98,16 +98,16 @@ namespace Anarchy
 			}
 			else
 			{
-				for (const GenericAction& action : m_Actions.GetActions())
+				for (const GenericAction& action : m_Actions.GetNetworkActions())
 				{
 					SendAction(action);
 				}
+				m_Actions.ProcessAllActions();
 				m_Actions.Clear();
 				m_TimeSinceLastSentMessage += delta.Milliseconds();
 				if (m_TimeSinceLastSentMessage >= 500)
 				{
 					SendKeepAlive();
-					BLT_INFO("Sent KeepAlive");
 					ResetTimeSinceLastSentMessage();
 				}
 			}
@@ -259,10 +259,14 @@ namespace Anarchy
 			HandleIncomingMessage(request);
 			ResetTimeSinceLastReceivedMessage();
 			SetRemoteSequenceId(request.Header.SequenceId);
-			BLT_INFO("Updating...");
 			if (IsConnected())
 			{
 				SendKeepAlive();
+			}
+
+			for (const GenericAction& action : request.Message.Updates)
+			{
+				GetActionBuffer().PushAction(action, false);
 			}
 		}
 	}

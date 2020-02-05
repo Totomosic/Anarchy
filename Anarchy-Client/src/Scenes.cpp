@@ -4,6 +4,10 @@
 
 #include "ClientState.h"
 #include "Entities/Systems/PlayerControlSystem.h"
+#include "Entities/Systems/MovementSystem.h"
+
+#include "Lib/Entities/Components/TilePosition.h"
+#include "Entities/Components/TileMotion.h"
 
 namespace Anarchy
 {
@@ -87,11 +91,32 @@ namespace Anarchy
 					BLT_INFO("Created Character Successfully");
 					ClientState::Get().InitializeEntities(scene, layer);
 					EntityHandle player = ClientState::Get().GetEntities().CreateFromEntityData(character->Data);
-					ComponentHandle controller = player.Assign<PlayerController>();
-					controller->Speed = 1.0f;
+					ComponentHandle controller = player.Assign<CPlayerController>();
+					controller->Speed = 10.0f;
 
 					ActionBuffer& commands = ClientState::Get().GetConnection().GetSocketApi().GetActionBuffer();
-					layer.Systems().Add<PlayerControlSystem>(&commands);
+					auto movementSystem = layer.Systems().Add<MovementSystem>();
+					auto controlSystem = layer.Systems().Add<PlayerControlSystem>(&commands);
+
+					ClientState::Get().GetEntities().SetOwnedEntity(character->Data.NetworkId);
+
+					commands.RegisterHandler<TileMovement>(ActionType::EntityMove, [](const InputAction<TileMovement>& action, bool fromNetwork)
+						{
+							if (fromNetwork && ClientState::Get().GetEntities().OwnsEntity(action.NetworkId))
+							{
+								return;
+							}
+							EntityHandle entity = ClientState::Get().GetEntities().GetEntityByNetworkId(action.NetworkId);
+							if (entity.IsValid() && entity.HasComponent<TilePosition>())
+							{
+								ComponentHandle position = entity.GetComponent<TilePosition>();
+								CTileMotion motion;
+								motion.Destination = position->Position + action.Action.Movement;
+								motion.Speed = action.Action.Speed;
+								position->Position += action.Action.Movement;
+								entity.Assign<CTileMotion>(std::move(motion));
+							}
+						});
 
 					std::optional<GetEntitiesResponse> entities = ClientState::Get().GetConnection().GetSocketApi().GetEntities({ 0 }, 5.0).Result();
 					if (entities)

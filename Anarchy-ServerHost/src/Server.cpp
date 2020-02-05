@@ -7,6 +7,8 @@
 
 #include "Utils/Config.h"
 
+#include "Lib/Entities/Components/TilePosition.h"
+
 namespace Anarchy
 {
 
@@ -21,9 +23,15 @@ namespace Anarchy
 		ServerState::Get().GetSocketApi().SetActionBuffer(&m_Actions);
 
 		ServerEntityCollection& entities = ServerState::Get().GetEntities();
-		m_Actions.RegisterHandler<TileMovement>(ActionType::EntityMove, [&entities](const InputAction<TileMovement>& command)
+		m_Actions.RegisterHandler<TileMovement>(ActionType::EntityMove, [&entities](const InputAction<TileMovement>& action, bool fromNetwork)
 			{
-				entities.SetEntityDirty(command.NetworkId);
+				entities.SetEntityDirty(action.NetworkId);
+				EntityHandle entity = entities.GetEntityByNetworkId(action.NetworkId);
+				if (entity.IsValid())
+				{
+					ComponentHandle position = entity.GetComponent<TilePosition>();
+					position->Position += action.Action.Movement;
+				}
 			});
 	}
 
@@ -44,20 +52,17 @@ namespace Anarchy
 
 		ServerState::Get().GetSocketApi().Update(Time::Get().RenderingTimeline().DeltaTime());
 
-		m_Actions.ProcessAllActions();
-
 		ServerEntityCollection& entities = ServerState::Get().GetEntities();
-		const std::vector<entityid_t> dirtyEntities = entities.GetDirtyEntities();
 		UpdateEntitiesRequest request;
-		for (entityid_t entity : dirtyEntities)
+
+		for (const GenericAction& action : m_Actions.GetNetworkActions())
 		{
-			EntityHandle e = entities.GetEntityByNetworkId(entity);
-			EntityData data = entities.GetDataFromEntity(e);
-			EntityDelta delta;
-			delta.NetworkId = entity;
-			delta.TilePosition = data.TilePosition;
-			request.Updates.push_back(delta);
+			request.Updates.push_back(action);
 		}
+
+		m_Actions.ProcessAllActions();
+		m_Actions.Clear();
+		
 		ServerState::Get().GetSocketApi().UpdateEntities(ServerState::Get().GetConnections().GetAllConnectionIds(), request);
 		entities.ClearDirtyEntities();
 	}

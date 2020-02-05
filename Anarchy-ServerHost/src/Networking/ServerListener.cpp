@@ -212,7 +212,7 @@ namespace Anarchy
 			connection->ResetTimeSinceLastPacket();
 			if (m_ActionBuffer != nullptr)
 			{
-				m_ActionBuffer->PushAction(action.Message);
+				m_ActionBuffer->PushAction(action.Message, true);
 			}
 		}
 	}

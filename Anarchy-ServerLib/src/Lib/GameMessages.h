@@ -2,6 +2,8 @@
 #include "ServerLib.h"
 #include "GameState.h"
 
+#include "Lib/Entities/EntityActions.h"
+
 namespace Anarchy
 {
 
@@ -158,7 +160,7 @@ namespace Anarchy
 		static constexpr MessageType Type = MessageType::UpdateEntities;
 
 	public:
-		std::vector<EntityDelta> Updates;
+		std::vector<GenericAction> Updates;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const UpdateEntitiesRequest& request)
