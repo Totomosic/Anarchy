@@ -9,6 +9,7 @@ namespace Anarchy
 
 	void Client::Init()
 	{
+		GetWindow().DisableVSync();
 		Scene& titleScene = SceneManager::Get().AddScene();
 		Scene& gameScene = SceneManager::Get().AddScene();
 
