@@ -30,7 +30,7 @@ namespace Anarchy
 			{
 				Task t = ClientState::Get().GetConnection().GetSocketApi().Disconnect({}, 2.0);
 			}
-		}		
+		}
 	}
 
 	void Client::Render()

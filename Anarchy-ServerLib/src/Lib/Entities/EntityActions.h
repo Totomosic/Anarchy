@@ -26,15 +26,17 @@ namespace Anarchy
 		Serialize(stream, command.Action);
 		Serialize(stream, command.ActionData->GetRemainingDataSize());
 		stream.Write(command.ActionData->GetBufferPtr(), command.ActionData->GetRemainingDataSize());
+		command.ActionData->Skip(command.ActionData->GetRemainingDataSize());
 	}
 
 	inline void Deserialize(InputMemoryStream& stream, GenericAction& command)
 	{
 		Deserialize(stream, command.Action);
-		uint32_t size;
+		size_t size;
 		Deserialize(stream, size);
 		command.ActionData = std::make_shared<OutputMemoryStream>(size);
 		command.ActionData->Write(stream.GetBufferPtr(), size);
+		stream.Skip(size);
 	}
 
 	template<typename T>

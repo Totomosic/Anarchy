@@ -62,7 +62,10 @@ namespace Anarchy
 			}
 		}
 		ForceDisconnectConnectionsInternal(connectionsToRemove);
-		SendKeepAliveInternal(keepAliveConnections);
+		if (keepAliveConnections.size() > 0)
+		{
+			SendKeepAliveInternal(keepAliveConnections);
+		}
 	}
 
 	void ServerListener::OnKeepAlive(const ServerNetworkMessage<KeepAlivePacket>& packet)
@@ -212,7 +215,7 @@ namespace Anarchy
 			connection->ResetTimeSinceLastPacket();
 			if (m_ActionBuffer != nullptr)
 			{
-				m_ActionBuffer->PushAction(action.Message, true);
+				//m_ActionBuffer->PushAction(action.Message, true);
 			}
 		}
 	}
@@ -224,6 +227,7 @@ namespace Anarchy
 			ClientConnection* connection = GetConnection(connectionId);
 			if (connection != nullptr)
 			{
+				connection->ResetTimeSinceLastSentPacket();
 				KeepAlivePacket packet;
 				auto message = CreateMessage(connectionId, packet);
 				HandleOutgoingMessage(connection, message, false);
