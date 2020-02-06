@@ -4,7 +4,7 @@
 namespace Anarchy
 {
 
-	struct TilePosition
+	struct CTilePosition
 	{
 	public:
 		Vector2i Position;

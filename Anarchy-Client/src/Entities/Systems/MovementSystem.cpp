@@ -9,7 +9,7 @@ namespace Anarchy
 
 	void MovementSystem::Update(EntityManager& entities, TimeDelta delta)
 	{
-		for (EntityHandle entity : entities.GetEntitiesWith<Transform, TilePosition, CTileMotion>())
+		for (EntityHandle entity : entities.GetEntitiesWith<Transform, CTilePosition, CTileMotion>())
 		{
 			ComponentHandle transform = entity.GetComponent<Transform>();
 			ComponentHandle motion = entity.GetComponent<CTileMotion>();

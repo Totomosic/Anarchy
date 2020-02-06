@@ -4,7 +4,7 @@
 namespace Anarchy
 {
 
-	struct NetworkId
+	struct CNetworkId
 	{
 	public:
 		entityid_t Id;

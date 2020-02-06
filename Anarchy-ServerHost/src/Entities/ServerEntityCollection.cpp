@@ -12,9 +12,9 @@ namespace Anarchy
 	{
 		m_Listener = m_GameLayer.Entities().OnEntityDestroyed().AddScopedEventListener([this](Event<EntityDestroyed>& e)
 			{
-				if (e.Data.Entity.HasComponent<NetworkId>())
+				if (e.Data.Entity.HasComponent<CNetworkId>())
 				{
-					m_NetworkIdManager.ReleaseId(e.Data.Entity.GetComponent<NetworkId>()->Id);
+					m_NetworkIdManager.ReleaseId(e.Data.Entity.GetComponent<CNetworkId>()->Id);
 				}
 			});
 	}
@@ -32,7 +32,7 @@ namespace Anarchy
 	EntityHandle ServerEntityCollection::CreateEntity(entityid_t networkId, const EntityHandle& entity, connid_t ownerConnectionId)
 	{
 		EntityHandle e = CreateEntity(networkId, entity);
-		e.Assign<EntityOwner>(EntityOwner{ ownerConnectionId });
+		e.Assign<CEntityOwner>(CEntityOwner{ ownerConnectionId });
 		return e;
 	}
 
@@ -46,7 +46,7 @@ namespace Anarchy
 		EntityHandle entity = EntityCollection::CreateFromEntityData(data);
 		if (ownerConnectionId != InvalidConnectionId)
 		{
-			entity.Assign<EntityOwner>(EntityOwner{ ownerConnectionId });
+			entity.Assign<CEntityOwner>(CEntityOwner{ ownerConnectionId });
 		}
 		return entity;
 	}
@@ -54,11 +54,11 @@ namespace Anarchy
 	std::vector<entityid_t> ServerEntityCollection::GetAllIdsOwnedBy(connid_t connectionId) const
 	{
 		std::vector<entityid_t> result;
-		for (EntityHandle entity : m_GameLayer.Entities().GetEntitiesWith<EntityOwner, NetworkId>())
+		for (EntityHandle entity : m_GameLayer.Entities().GetEntitiesWith<CEntityOwner, CNetworkId>())
 		{
-			if (entity.GetComponent<EntityOwner>()->ConnectionId == connectionId)
+			if (entity.GetComponent<CEntityOwner>()->ConnectionId == connectionId)
 			{
-				result.push_back(entity.GetComponent<NetworkId>()->Id);
+				result.push_back(entity.GetComponent<CNetworkId>()->Id);
 			}
 		}
 		return result;

@@ -4,7 +4,7 @@
 namespace Anarchy
 {
 
-	struct EntityOwner
+	struct CEntityOwner
 	{
 	public:
 		connid_t ConnectionId;

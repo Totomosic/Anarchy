@@ -85,12 +85,14 @@ namespace Anarchy
 				if (character)
 				{
 					Layer& layer = scene.AddLayer();
-					EntityHandle camera = layer.GetFactory().Camera(Matrix4f::Orthographic(0, 32, 0, 18, -100, 100));
+					EntityHandle camera = layer.GetFactory().Camera(Matrix4f::Orthographic(-16, 16, -9, 9, -100, 100));
 					layer.SetActiveCamera(camera);
 
 					BLT_INFO("Created Character Successfully");
 					ClientState::Get().InitializeEntities(scene, layer);
-					EntityHandle player = ClientState::Get().GetEntities().CreateFromEntityData(character->Data);
+					ClientEntityCollection& entities = ClientState::Get().GetEntities();
+
+					EntityHandle player = entities.CreateFromEntityData(character->Data);
 					ComponentHandle controller = player.Assign<CPlayerController>();
 					controller->Speed = 10.0f;
 
@@ -98,30 +100,30 @@ namespace Anarchy
 					auto movementSystem = layer.Systems().Add<MovementSystem>();
 					auto controlSystem = layer.Systems().Add<PlayerControlSystem>(&commands);
 
-					ClientState::Get().GetEntities().SetOwnedEntity(character->Data.NetworkId);
+					entities.SetCamera(camera);
+					entities.SetOwnedEntity(character->Data.NetworkId);
 
-					commands.RegisterHandler<TileMovement>(ActionType::EntityMove, [](const InputAction<TileMovement>& action, bool fromNetwork)
+					commands.RegisterHandler<TileMovement>(ActionType::EntityMove, [&entities](const InputAction<TileMovement>& action, bool fromNetwork)
 						{
-							if (fromNetwork && ClientState::Get().GetEntities().OwnsEntity(action.NetworkId))
+							if (!fromNetwork || !entities.OwnsEntity(action.NetworkId))
 							{
-								return;
-							}
-							EntityHandle entity = ClientState::Get().GetEntities().GetEntityByNetworkId(action.NetworkId);
-							if (entity.IsValid() && entity.HasComponent<TilePosition>())
-							{
-								ComponentHandle position = entity.GetComponent<TilePosition>();
-								CTileMotion motion;
-								motion.Destination = position->Position + action.Action.Movement;
-								motion.Speed = action.Action.Speed;
-								position->Position += action.Action.Movement;
-								entity.Assign<CTileMotion>(std::move(motion));
+								EntityHandle entity = entities.GetEntityByNetworkId(action.NetworkId);
+								if (entity && entity.HasComponent<CTilePosition>())
+								{
+									ComponentHandle position = entity.GetComponent<CTilePosition>();
+									CTileMotion motion;
+									motion.Destination = action.Action.Destination;
+									motion.Speed = action.Action.Speed;
+									position->Position = action.Action.Destination;
+									entity.Assign<CTileMotion>(std::move(motion));
+								}
 							}
 						});
 
-					std::optional<GetEntitiesResponse> entities = ClientState::Get().GetConnection().GetSocketApi().GetEntities({ 0 }, 5.0).Result();
-					if (entities)
+					std::optional<GetEntitiesResponse> otherEntities = ClientState::Get().GetConnection().GetSocketApi().GetEntities({ 0 }, 5.0).Result();
+					if (otherEntities)
 					{
-						for (const EntityData& data : entities->Entities)
+						for (const EntityData& data : otherEntities->Entities)
 						{
 							if (data.NetworkId != character->Data.NetworkId)
 							{

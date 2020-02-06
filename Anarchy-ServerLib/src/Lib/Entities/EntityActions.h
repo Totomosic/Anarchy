@@ -73,19 +73,19 @@ namespace Anarchy
 	public:
 		static constexpr ActionType Type = ActionType::EntityMove;
 	public:
-		Vector2i Movement;
+		Vector2i Destination;
 		float Speed;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const TileMovement& command)
 	{
-		Serialize(stream, command.Movement);
+		Serialize(stream, command.Destination);
 		Serialize(stream, command.Speed);
 	}
 
 	inline void Deserialize(InputMemoryStream& stream, TileMovement& command)
 	{
-		Deserialize(stream, command.Movement);
+		Deserialize(stream, command.Destination);
 		Deserialize(stream, command.Speed);
 	}
 

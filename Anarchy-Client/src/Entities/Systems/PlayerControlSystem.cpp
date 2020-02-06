@@ -17,7 +17,7 @@ namespace Anarchy
 	{
 		if (m_ActionBuffer != nullptr)
 		{
-			for (EntityHandle entity : manager.GetEntitiesWith<CPlayerController, TilePosition, NetworkId>())
+			for (EntityHandle entity : manager.GetEntitiesWith<CPlayerController, CTilePosition, CNetworkId>())
 			{
 				if (!entity.HasComponent<CTileMotion>())
 				{
@@ -41,10 +41,10 @@ namespace Anarchy
 
 					if (direction.x != 0 || direction.y != 0)
 					{
-						entityid_t networkId = entity.GetComponent<NetworkId>()->Id;
+						entityid_t networkId = entity.GetComponent<CNetworkId>()->Id;
 						InputAction<TileMovement> action;
 						action.NetworkId = networkId;
-						action.Action.Movement = direction;
+						action.Action.Destination = entity.GetComponent<CTilePosition>()->Position + direction;
 						action.Action.Speed = entity.GetComponent<CPlayerController>()->Speed;
 						m_ActionBuffer->PushAction(action);
 					}

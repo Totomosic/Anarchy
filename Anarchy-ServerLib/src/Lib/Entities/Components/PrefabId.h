@@ -4,7 +4,7 @@
 namespace Anarchy
 {
 
-	struct PrefabId
+	struct CPrefabId
 	{
 	public:
 		prefab_t Id;

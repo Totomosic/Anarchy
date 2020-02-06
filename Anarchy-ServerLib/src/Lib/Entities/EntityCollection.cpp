@@ -12,9 +12,9 @@ namespace Anarchy
 	{
 		m_OnDestroyListener = m_GameLayer.Entities().OnEntityDestroyed().AddScopedEventListener([this](Event<EntityDestroyed>& e)
 			{
-				if (e.Data.Entity.HasComponent<NetworkId>())
+				if (e.Data.Entity.HasComponent<CNetworkId>())
 				{
-					m_EntityMap.erase(e.Data.Entity.GetComponent<NetworkId>()->Id);
+					m_EntityMap.erase(e.Data.Entity.GetComponent<CNetworkId>()->Id);
 				}
 			}, ListenerPriority::Low);
 	}
@@ -62,7 +62,7 @@ namespace Anarchy
 
 	EntityHandle EntityCollection::CreateEntity(entityid_t networkId, const EntityHandle& entity)
 	{
-		entity.Assign<NetworkId>(NetworkId{ networkId });
+		entity.Assign<CNetworkId>(CNetworkId{ networkId });
 		m_EntityMap[networkId] = entity;
 		return entity;
 	}
@@ -70,17 +70,17 @@ namespace Anarchy
 	EntityHandle EntityCollection::CreateEntity(entityid_t networkId, prefab_t prefabId)
 	{
 		EntityHandle entity = CreateEntity(networkId, m_Prefabs.CreateEntity(prefabId, m_AddGraphicsComponents));
-		entity.Assign<PrefabId>(PrefabId{ prefabId });
+		entity.Assign<CPrefabId>(CPrefabId{ prefabId });
 		return entity;
 	}
 
 	EntityHandle EntityCollection::CreateFromEntityData(const EntityData& data)
 	{
 		EntityHandle entity = CreateEntity(data.NetworkId, data.PrefabId);
-		entity.Assign<DimensionId>(DimensionId{ data.DimensionId });
-		if (entity.HasComponent<TilePosition>())
+		entity.Assign<CDimensionId>(CDimensionId{ data.DimensionId });
+		if (entity.HasComponent<CTilePosition>())
 		{
-			entity.GetComponent<TilePosition>()->Position = data.TilePosition;
+			entity.GetComponent<CTilePosition>()->Position = data.TilePosition;
 		}
 		if (entity.HasComponent<Transform>())
 		{
@@ -100,16 +100,16 @@ namespace Anarchy
 
 	Vector2i EntityCollection::GetEntityTilePosition(const EntityHandle& entity) const
 	{
-		Vector2i xy = entity.GetComponent<TilePosition>()->Position;
+		Vector2i xy = entity.GetComponent<CTilePosition>()->Position;
 		return xy;
 	}
 
 	EntityData EntityCollection::GetDataFromEntity(const EntityHandle& entity) const
 	{
 		EntityData data;
-		data.NetworkId = entity.GetComponent<NetworkId>()->Id;
-		data.PrefabId = entity.GetComponent<PrefabId>()->Id;
-		data.DimensionId = entity.GetComponent<DimensionId>()->Id;
+		data.NetworkId = entity.GetComponent<CNetworkId>()->Id;
+		data.PrefabId = entity.GetComponent<CPrefabId>()->Id;
+		data.DimensionId = entity.GetComponent<CDimensionId>()->Id;
 		data.HeightLevel = 0;
 		data.Level = 1;
 		data.TilePosition = GetEntityTilePosition(entity);

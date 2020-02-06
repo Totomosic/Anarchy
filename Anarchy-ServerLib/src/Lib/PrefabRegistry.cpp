@@ -45,7 +45,7 @@ namespace Anarchy
 		Register([](Layer& layer, bool addGraphicsComponents)
 			{
 				EntityHandle entity = layer.GetFactory().Empty();
-				entity.Assign<TilePosition>();
+				entity.Assign<CTilePosition>();
 				if (addGraphicsComponents)
 				{
 					entity.Assign<Transform>();

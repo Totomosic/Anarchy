@@ -4,7 +4,7 @@
 namespace Anarchy
 {
 	
-	struct DimensionId
+	struct CDimensionId
 	{
 	public:
 		int Id;

@@ -27,10 +27,10 @@ namespace Anarchy
 			{
 				entities.SetEntityDirty(action.NetworkId);
 				EntityHandle entity = entities.GetEntityByNetworkId(action.NetworkId);
-				if (entity.IsValid())
+				if (entity)
 				{
-					ComponentHandle position = entity.GetComponent<TilePosition>();
-					position->Position += action.Action.Movement;
+					ComponentHandle position = entity.GetComponent<CTilePosition>();
+					position->Position = action.Action.Destination;
 				}
 			});
 	}
