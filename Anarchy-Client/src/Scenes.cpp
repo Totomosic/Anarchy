@@ -89,8 +89,11 @@ namespace Anarchy
 					layer.SetActiveCamera(camera);
 
 					BLT_INFO("Created Character Successfully");
+					ClientState::Get().InitializeTilemap(scene, layer, 32, 18);
 					ClientState::Get().InitializeEntities(scene, layer);
 					ClientEntityCollection& entities = ClientState::Get().GetEntities();
+
+					ClientState::Get().GetTilemap().SetTiles(0, 0, 32, 18, { TileType::Grass });
 
 					EntityHandle player = entities.CreateFromEntityData(character->Data);
 					ComponentHandle controller = player.Assign<CPlayerController>();
@@ -127,7 +130,7 @@ namespace Anarchy
 						{
 							if (data.NetworkId != character->Data.NetworkId)
 							{
-								ClientState::Get().GetEntities().CreateFromEntityData(data);
+								entities.CreateFromEntityData(data);
 							}
 						}
 					}

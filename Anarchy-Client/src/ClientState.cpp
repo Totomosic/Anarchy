@@ -21,13 +21,19 @@ namespace Anarchy
 	}
 
 	ClientState::ClientState()
-		: m_Connection(), m_Entities()
+		: m_Connection(), m_Tilemap(), m_TilemapRenderer(), m_Entities()
 	{
 	}
 
 	void ClientState::InitializeConnection(const SocketAddress& serverAddress)
 	{
 		m_Connection = std::make_unique<ConnectionManager>(serverAddress);
+	}
+
+	void ClientState::InitializeTilemap(Scene& gameScene, Layer& mapLayer, int width, int height)
+	{
+		m_Tilemap = std::make_unique<Tilemap>(width, height);
+		m_TilemapRenderer = std::make_unique<TilemapRenderer>(&mapLayer, m_Tilemap.get(), 1.0f, 1.0f);
 	}
 
 	void ClientState::InitializeEntities(Scene& gameScene, Layer& gameLayer)
@@ -73,6 +79,37 @@ namespace Anarchy
 	void ClientState::DestroyEntities()
 	{
 		m_Entities = nullptr;
+	}
+
+	bool ClientState::HasTilemap() const
+	{
+		return m_Tilemap != nullptr;
+	}
+
+	const Tilemap& ClientState::GetTilemap() const
+	{
+		return *m_Tilemap;
+	}
+
+	Tilemap& ClientState::GetTilemap()
+	{
+		return *m_Tilemap;
+	}
+
+	const TilemapRenderer& ClientState::GetTilemapRenderer() const
+	{
+		return *m_TilemapRenderer;
+	}
+
+	TilemapRenderer& ClientState::GetTilemapRenderer()
+	{
+		return *m_TilemapRenderer;
+	}
+
+	void ClientState::DestroyTilemap()
+	{
+		m_TilemapRenderer = nullptr;
+		m_Tilemap = nullptr;
 	}
 
 }

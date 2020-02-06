@@ -139,7 +139,7 @@ namespace Anarchy
 				packet->Acked = true;
 				for (seqid_t i = 0; i < 32; i++)
 				{
-					// Find to underflow
+					// Fine to underflow
 					seqid_t seqid = base - (i + 1);
 					PacketData* data = m_ReceivedMessages.GetPacketData(seqid);
 					if (data != nullptr)

@@ -32,6 +32,10 @@ namespace Anarchy
 				Task t = ClientState::Get().GetConnection().GetSocketApi().Disconnect({}, 2.0);
 			}
 		}
+		if (ClientState::Get().HasTilemap())
+		{
+			ClientState::Get().GetTilemapRenderer().Update();
+		}
 	}
 
 	void Client::Render()
