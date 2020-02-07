@@ -84,24 +84,28 @@ namespace Anarchy
 				std::optional<CreateCharacterResponse> character = ClientState::Get().GetConnection().GetSocketApi().CreateCharacter(request, 5.0).Result();
 				if (character)
 				{
-					Layer& layer = scene.AddLayer();
-					EntityHandle camera = layer.GetFactory().Camera(Matrix4f::Orthographic(-16, 16, -9, 9, -100, 100));
-					layer.SetActiveCamera(camera);
+					EntityHandle camera = scene.GetFactory().Camera(Matrix4f::Orthographic(-16, 16, -9, 9, -100, 100));
+					Layer& mapLayer = scene.AddLayer();
+					Layer& gameLayer = scene.AddLayer();
+					mapLayer.SetActiveCamera(camera);
+					gameLayer.SetActiveCamera(camera);
 
 					BLT_INFO("Created Character Successfully");
-					ClientState::Get().InitializeTilemap(scene, layer, 32, 18);
-					ClientState::Get().InitializeEntities(scene, layer);
+					int width = 32;
+					int height = 18;
+					ClientState::Get().InitializeTilemap(scene, mapLayer, width, height);
+					ClientState::Get().InitializeEntities(scene, gameLayer);
 					ClientEntityCollection& entities = ClientState::Get().GetEntities();
 
-					ClientState::Get().GetTilemap().SetTiles(0, 0, 32, 18, { TileType::Grass });
+					ClientState::Get().GetTilemap().SetTiles(0, 0, width, height, { TileType::Grass });
 
 					EntityHandle player = entities.CreateFromEntityData(character->Data);
 					ComponentHandle controller = player.Assign<CPlayerController>();
 					controller->Speed = 10.0f;
 
 					ActionBuffer& commands = ClientState::Get().GetConnection().GetSocketApi().GetActionBuffer();
-					auto movementSystem = layer.Systems().Add<MovementSystem>();
-					auto controlSystem = layer.Systems().Add<PlayerControlSystem>(&commands);
+					auto movementSystem = gameLayer.Systems().Add<MovementSystem>();
+					auto controlSystem = gameLayer.Systems().Add<PlayerControlSystem>(&commands);
 
 					entities.SetCamera(camera);
 					entities.SetOwnedEntity(character->Data.NetworkId);
