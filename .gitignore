@@ -40,3 +40,4 @@ Makefile
 *.xcodeproj/
 *.xcworkspace/
 *.DS_Store
+*.dat

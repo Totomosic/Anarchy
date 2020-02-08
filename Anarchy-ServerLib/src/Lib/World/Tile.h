@@ -1,11 +1,16 @@
 #pragma once
+#include <cstdint>
+
 namespace Anarchy
 {
 
-	enum class TileType
+	enum class TileType : uint16_t
 	{
 		None,
-		Grass
+		Grass,
+		Sand,
+		Water,
+		Stone
 	};
 
 	struct Tile
