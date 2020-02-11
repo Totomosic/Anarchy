@@ -23,13 +23,6 @@ namespace Anarchy
 		ServerState::Get().Initialize(ServerAddress, gameScene, gameLayer);
 		ServerState::Get().GetSocketApi().SetActionBuffer(&m_Actions);
 
-		WorldReader reader("./World");
-		TileView tiles = reader.GetTiles(4000, 4000, 100, 100);
-		for (size_t i = 0; i < (size_t)tiles.GetWidth() * (size_t)tiles.GetHeight(); i++)
-		{
-			BLT_INFO((uint16_t)*(tiles.GetTiles() + i));
-		}
-
 		ServerEntityCollection& entities = ServerState::Get().GetEntities();
 		m_Actions.RegisterHandler<TileMovement>(ActionType::EntityMove, [&entities](const InputAction<TileMovement>& action, bool fromNetwork)
 			{

@@ -7,6 +7,8 @@
 namespace Anarchy
 {
 
+	Renderer2D* renderer;
+
 	void Client::Init()
 	{
 		GetWindow().DisableVSync();
@@ -16,6 +18,8 @@ namespace Anarchy
 		CreateTitleScene(titleScene, GetWindow(), gameScene);
 		CreateGameScene(gameScene, GetWindow());
 		SceneManager::Get().SetCurrentScene(titleScene);
+
+		renderer = new Renderer2D;
 	}
 
 	void Client::Tick()
