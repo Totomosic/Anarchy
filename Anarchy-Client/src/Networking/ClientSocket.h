@@ -1,5 +1,7 @@
 #pragma once
 #include "Lib/Authentication.h"
+#include "Lib/Networking/ChunkSender.h"
+#include "Lib/Networking/ChunkReceiver.h"
 #include "Core/Events/EventEmitter.h"
 #include "Core/Events/EventBus.h"
 
@@ -18,6 +20,9 @@ namespace Anarchy
 	private:
 		SocketAddress m_Address;
 		UDPsocket m_Socket;
+		ChunkSender m_ChunkSender;
+		ChunkReceiver m_ChunkReceiver;
+
 		EventBus m_Bus;
 		EventEmitter<ServerMessageReceived> m_OnMessage;
 
@@ -32,6 +37,8 @@ namespace Anarchy
 		const SocketAddress& GetAddress() const;
 		const UDPsocket& GetSocket() const;
 		EventEmitter<ServerMessageReceived>& OnMessageReceived();
+
+		void Update(TimeDelta dt);
 
 		template<typename T>
 		void SendPacket(MessageType type, const T& data)

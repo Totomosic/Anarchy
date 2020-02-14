@@ -4,6 +4,8 @@
 #include "Events.h"
 #include "Core/Events/EventEmitter.h"
 #include "Core/Events/EventBus.h"
+#include "Lib/Networking/ChunkReceiver.h"
+#include "Lib/Networking/ChunkSender.h"
 
 namespace Anarchy
 {
@@ -21,6 +23,8 @@ namespace Anarchy
 	private:
 		SocketAddress m_Address;
 		UDPsocket m_Socket;
+		ChunkSender m_ChunkSender;
+		ChunkReceiver m_ChunkReceiver;
 
 		EventBus m_Bus;
 		EventEmitter<ClientMessageReceived> m_OnMessage;
@@ -39,6 +43,7 @@ namespace Anarchy
 		EventEmitter<ClientMessageReceived>& OnMessageReceived();
 
 		void Run();
+		void Update(TimeDelta dt);
 
 		template<typename T>
 		void SendPacket(const std::vector<SocketAddress>& addresses, MessageType type, const T& data)

@@ -6,7 +6,7 @@ namespace Anarchy
 {
 
 	ServerSocket::ServerSocket(const SocketAddress& address)
-		: m_Address(address), m_Socket(), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ClientMessageReceived>(ServerEvents::ClientMessageRecevied))
+		: m_Address(address), m_Socket(), m_ChunkSender(&m_Socket), m_ChunkReceiver(&m_Socket), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ClientMessageReceived>(ServerEvents::ClientMessageRecevied))
 	{
 		m_Bus.SetImmediateMode(true);
 	}
@@ -48,6 +48,11 @@ namespace Anarchy
 					}
 				}
 			});		
+	}
+
+	void ServerSocket::Update(TimeDelta dt)
+	{
+		m_ChunkSender.Update(dt);
 	}
 
 }

@@ -67,6 +67,7 @@ namespace Anarchy
 		{
 			SendKeepAliveInternal(keepAliveConnections);
 		}
+		m_ServerSocket.Update(delta);
 	}
 
 	void ServerListener::OnKeepAlive(const ServerNetworkMessage<KeepAlivePacket>& packet)

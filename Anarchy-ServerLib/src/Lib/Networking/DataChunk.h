@@ -15,7 +15,7 @@ namespace Anarchy
 	{
 	public:
 		chunkid_t ChunkId;
-		int SliceId;
+		int SliceIndex;
 		int NumSlices;
 		int SliceBytes;
 		uint8_t Data[MaxSliceSize];
@@ -24,9 +24,9 @@ namespace Anarchy
 	inline void Serialize(OutputMemoryStream& stream, const ChunkSlicePacket& packet)
 	{
 		Serialize(stream, packet.ChunkId);
-		Serialize(stream, packet.SliceId);
+		Serialize(stream, packet.SliceIndex);
 		Serialize(stream, packet.NumSlices);
-		if (packet.SliceId == packet.NumSlices - 1)
+		if (packet.SliceIndex == packet.NumSlices - 1)
 		{
 			Serialize(stream, packet.SliceBytes);
 			stream.Write(packet.Data, packet.SliceBytes);
@@ -40,15 +40,16 @@ namespace Anarchy
 	inline void Deserialize(InputMemoryStream& stream, ChunkSlicePacket& packet)
 	{
 		Deserialize(stream, packet.ChunkId);
-		Deserialize(stream, packet.SliceId);
+		Deserialize(stream, packet.SliceIndex);
 		Deserialize(stream, packet.NumSlices);
-		if (packet.SliceId == packet.NumSlices - 1)
+		if (packet.SliceIndex == packet.NumSlices - 1)
 		{
 			Deserialize(stream, packet.SliceBytes);
 			stream.Read(packet.Data, packet.SliceBytes);
 		}
 		else
 		{
+			packet.SliceBytes = MaxSliceSize;
 			stream.Read(packet.Data, MaxSliceSize);
 		}
 	}

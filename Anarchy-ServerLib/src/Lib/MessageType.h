@@ -8,6 +8,7 @@ namespace Anarchy
 	{
 		None,
 		ChunkSlice,
+		ChunkAck,
 
 		KeepAlive,
 

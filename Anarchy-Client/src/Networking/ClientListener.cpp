@@ -111,6 +111,7 @@ namespace Anarchy
 					ResetTimeSinceLastSentMessage();
 				}
 			}
+			m_Socket.Update(delta);
 		}
 	}
 

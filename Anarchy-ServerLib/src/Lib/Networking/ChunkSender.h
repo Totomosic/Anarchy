@@ -8,28 +8,39 @@ namespace Anarchy
 	class ChunkSender
 	{
 	private:
-		bool m_Sending;
-		chunkid_t m_ChunkId;
-		uint32_t m_ChunkSize;
-		int m_NumSlices;
-		int m_CurrentSliceId;
-		bool m_Acked[MaxSlicesPerChunk];
-		uint8_t m_ChunkData[MaxChunkSize];
-		double m_TimeLastSent[MaxSlicesPerChunk];
+		struct ChunkData
+		{
+		public:
+			chunkid_t ChunkId = 0;
+			uint32_t ChunkSize = 0;
+			int NumSlices = 0;
+			int CurrentSliceIndex = 0;
+			int NumAckedSlices = 0;
+			bool Acked[MaxSlicesPerChunk];
+			uint8_t ChunkData[MaxChunkSize];
+			double TimeLastSent[MaxSlicesPerChunk];
+			SocketAddress ReceiverAddress;
+		};
+
+	private:
+		std::vector<ChunkData> m_InProgressChunks;
+		chunkid_t m_NextChunkId;
+		std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTime;
 
 		UDPsocket* m_Socket;
-		SocketAddress m_ReceiverAddress;
 
 	public:
 		ChunkSender(UDPsocket* socket);
 
 		bool CanSendPacket() const;
+		void SendPacket(const SocketAddress& to, const void* data, uint32_t size);
 
 		void Update(TimeDelta dt);
-		void SendPacket(const SocketAddress& to, const void* data, uint32_t size);
+		void HandleAckPacket(InputMemoryStream& stream);
 
 	private:
 		int CalculateNumSlices(uint32_t size) const;
+		uint16_t CalculateFinalChunkSize(uint32_t size) const;
 	};
 
 }

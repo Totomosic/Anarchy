@@ -8,7 +8,7 @@ namespace Anarchy
 {
 
 	ClientSocket::ClientSocket(const SocketAddress& address)
-		: m_Address(address), m_Socket(), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>(ServerEvents::ServerMessageReceived))
+		: m_Address(address), m_Socket(), m_ChunkSender(&m_Socket), m_ChunkReceiver(&m_Socket), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>(ServerEvents::ServerMessageReceived))
 	{
 		m_Bus.SetImmediateMode(true);
 		m_Socket.Connect(m_Address);
@@ -28,6 +28,11 @@ namespace Anarchy
 	EventEmitter<ServerMessageReceived>& ClientSocket::OnMessageReceived()
 	{
 		return m_OnMessage;
+	}
+
+	void ClientSocket::Update(TimeDelta dt)
+	{
+		m_ChunkSender.Update(dt);
 	}
 
 	void ClientSocket::LaunchListenerThread()
