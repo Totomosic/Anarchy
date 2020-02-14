@@ -84,6 +84,8 @@ namespace Anarchy
 				std::optional<CreateCharacterResponse> character = ClientState::Get().GetConnection().GetSocketApi().CreateCharacter(request, 5.0).Result();
 				if (character)
 				{
+					int width = 50;
+					int height = 50;
 					EntityHandle camera = scene.GetFactory().Camera(Matrix4f::Orthographic(-16, 16, -9, 9, -100, 100));
 					Layer& mapLayer = scene.AddLayer();
 					Layer& gameLayer = scene.AddLayer();
@@ -91,13 +93,21 @@ namespace Anarchy
 					gameLayer.SetActiveCamera(camera);
 
 					BLT_INFO("Created Character Successfully");
-					int width = 32;
-					int height = 18;
+					
 					ClientState::Get().InitializeTilemap(scene, mapLayer, width, height);
 					ClientState::Get().InitializeEntities(scene, gameLayer);
 					ClientEntityCollection& entities = ClientState::Get().GetEntities();
 
-					ClientState::Get().GetTilemap().SetTiles(0, 0, width, height, { TileType::Grass });
+					ClientState::Get().GetTilemap().SetTiles(0, 0, width, height, TileType::Grass);
+
+					ClientState::Get().GetConnection().GetSocketApi().GetTilemap({ 0, 160, 330, width, height }).ContinueWithOnMainThread([](std::optional<GetTilemapResponse>& response)
+						{
+							if (response)
+							{
+								ClientState::Get().GetTilemap().SetTiles(0, 0, response->Width, response->Height, response->Tiles.data());
+								ClientState::Get().GetTilemapRenderer().Invalidate();
+							}
+						});
 
 					EntityHandle player = entities.CreateFromEntityData(character->Data);
 					ComponentHandle controller = player.Assign<CPlayerController>();

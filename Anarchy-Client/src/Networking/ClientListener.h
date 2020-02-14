@@ -67,6 +67,7 @@ namespace Anarchy
 
 		Promise<CreateCharacterResponse> CreateCharacter(const CreateCharacterRequest& request, double timeoutSeconds = IgnoreTimeout) override;
 		Promise<GetEntitiesResponse> GetEntities(const GetEntitiesRequest& request, double timeoutSeconds = IgnoreTimeout) override;
+		Promise<GetTilemapResponse> GetTilemap(const GetTilemapRequest& request, double timeoutSeconds = IgnoreTimeout) override;
 
 		void SpawnEntities(const NetworkMessage<SpawnEntitiesRequest>& request) override;
 		void DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request) override;

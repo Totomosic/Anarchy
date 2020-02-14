@@ -70,6 +70,7 @@ namespace Anarchy
 
 		std::optional<CreateCharacterResponse> CreateCharacter(const ServerRequest<ServerNetworkMessage<CreateCharacterRequest>>& request) override;
 		std::optional<GetEntitiesResponse> GetEntities(const ServerRequest<ServerNetworkMessage<GetEntitiesRequest>>& request) override;
+		std::optional<GetTilemapResponse> GetTilemap(const ServerRequest<ServerNetworkMessage<GetTilemapRequest>>& request) override;
 
 		void SpawnEntities(const std::vector<connid_t>& connections, const SpawnEntitiesRequest& request, connid_t ownerConnectionId = InvalidConnectionId) override;
 		void DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request) override;

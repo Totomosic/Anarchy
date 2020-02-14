@@ -94,7 +94,7 @@ class WorldReader:
                     current_x = row_width + base_x
                     row_index += 1
                 current_y = base_y + row_index
-        return result
+        return result.T
 
     def set_tile(self, x, y, tile):
         index = self.create_tile_index(x, y)

@@ -32,8 +32,6 @@ namespace Anarchy
 			UIElement& root = uiLayer.GetUI().GetRoot();
 			UIRectangle& window = root.CreateImage(sceneWidth, sceneHeight, m_RenderTexture.get(), Transform({ sceneWidth / 2.0f + 20, Height() / 2.0f, 0 }));
 			UIElement& panel = root.CreateElement(Transform({ sceneWidth + 20 * 2 + (Width() - sceneWidth - 20 * 3) / 2.0f, Height() / 2.0f, 0 }));
-
-			panel.CreateText("Options", ResourceManager::Get().Fonts().Calibri(18), Color::Black, Transform({ 0, 300, 1 }));
 		}
 
 		void Update() override

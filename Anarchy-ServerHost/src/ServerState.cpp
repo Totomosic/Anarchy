@@ -5,7 +5,7 @@ namespace Anarchy
 {
 
 	ServerState::ServerState()
-		: m_Socket(), m_Connections(), m_Entities(), m_DebugCommands()
+		: m_Socket(), m_Connections(), m_Entities(), m_DebugCommands(), m_WorldReader("World")
 	{
 	}
 
@@ -64,6 +64,16 @@ namespace Anarchy
 	ServerEntityCollection& ServerState::GetEntities()
 	{
 		return *m_Entities;
+	}
+
+	const WorldReader& ServerState::GetWorld() const
+	{
+		return m_WorldReader;
+	}
+
+	WorldReader& ServerState::GetWorld()
+	{
+		return m_WorldReader;
 	}
 
 }

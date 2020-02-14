@@ -4,7 +4,7 @@
 namespace Anarchy
 {
 
-	Tilemap::View::View(int x, int y, int width, int height, int originalWidth, int originalheight, Tile* tiles)
+	Tilemap::View::View(int x, int y, int width, int height, int originalWidth, int originalheight, TileType* tiles)
 		: m_XOffset(x), m_YOffset(y), m_Width(width), m_Height(height), m_OriginalWidth(originalWidth), m_OriginalHeight(originalheight), m_Tiles(tiles)
 	{
 	}
@@ -19,7 +19,7 @@ namespace Anarchy
 		return m_Height;
 	}
 
-	const Tile* Tilemap::View::GetTiles() const
+	const TileType* Tilemap::View::GetTiles() const
 	{
 		return m_Tiles;
 	}
@@ -29,7 +29,7 @@ namespace Anarchy
 		return x >= 0 && y >= 0 && x < m_Width && y < m_Height;
 	}
 
-	const Tile* Tilemap::View::GetTile(int x, int y) const
+	const TileType* Tilemap::View::GetTile(int x, int y) const
 	{
 		return m_Tiles + (((int64_t)x + (int64_t)m_XOffset) + ((int64_t)y + (int64_t)m_YOffset) * (int64_t)m_OriginalWidth);
 	}
@@ -40,7 +40,7 @@ namespace Anarchy
 	}
 
 	Tilemap::Tilemap(int width, int height)
-		: m_Tiles(std::make_unique<Tile[]>((int64_t)width * (int64_t)height)), m_View(0, 0, width, height, width, height, m_Tiles.get())
+		: m_Tiles(std::make_unique<TileType[]>((int64_t)width * (int64_t)height)), m_View(0, 0, width, height, width, height, m_Tiles.get())
 	{
 	}
 
@@ -59,13 +59,13 @@ namespace Anarchy
 		return m_View;
 	}
 
-	void Tilemap::SetTile(int x, int y, const Tile& tile)
+	void Tilemap::SetTile(int x, int y, const TileType& tile)
 	{
 		BLT_ASSERT(GetView().ValidateCoordinate(x, y), "Invalid coordinate");
 		m_Tiles[GetIndex(x, y)] = tile;
 	}
 
-	void Tilemap::SetTiles(int x, int y, int width, int height, const Tile& tile)
+	void Tilemap::SetTiles(int x, int y, int width, int height, const TileType& tile)
 	{
 		BLT_ASSERT(GetView().ValidateCoordinate(x, y) && GetView().ValidateCoordinate(x + width - 1, y + height - 1), "Invalid region");
 		for (int i = x; i < x + width; i++)
@@ -77,16 +77,14 @@ namespace Anarchy
 		}
 	}
 
-	void Tilemap::SetTiles(int x, int y, int width, int height, const Tile* tiles)
+	void Tilemap::SetTiles(int x, int y, int width, int height, const TileType* tiles)
 	{
 		BLT_ASSERT(GetView().ValidateCoordinate(x, y) && GetView().ValidateCoordinate(x + width - 1, y + height - 1), "Invalid region");
-		int index = 0;
 		for (int i = x; i < x + width; i++)
 		{
 			for (int j = y; j < y + height; j++)
 			{
-				SetTile(i, j, tiles[index]);
-				index++;
+				SetTile(i, j, tiles[GetIndex(i, j)]);
 			}
 		}
 	}

@@ -1,5 +1,7 @@
 #pragma once
 #include <cstdint>
+#include "Utils/Serialization.h"
+#include "Utils/Deserialization.h"
 
 namespace Anarchy
 {
@@ -12,6 +14,9 @@ namespace Anarchy
 		Water,
 		Stone
 	};
+
+	ANCH_DEFINE_DEFAULT_SERIALIZE(TileType);
+	ANCH_DEFINE_DEFAULT_DESERIALIZE(TileType);
 
 	struct Tile
 	{

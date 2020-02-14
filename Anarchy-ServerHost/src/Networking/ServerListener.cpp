@@ -16,6 +16,7 @@ namespace Anarchy
 		Register<ServerDisconnectResponse, ServerDisconnectRequest>(ANCH_SERVER_BIND_FN(ServerListener::Disconnect));
 		Register<CreateCharacterResponse, CreateCharacterRequest>(ANCH_SERVER_BIND_FN(ServerListener::CreateCharacter));
 		Register<GetEntitiesResponse, GetEntitiesRequest>(ANCH_SERVER_BIND_FN(ServerListener::GetEntities));
+		Register<GetTilemapResponse, GetTilemapRequest>(ANCH_SERVER_BIND_FN(ServerListener::GetTilemap));
 		Register<GenericAction>(ANCH_SERVER_BIND_FN(ServerListener::OnAction));
 
 		Register<KeepAlivePacket>(ANCH_SERVER_BIND_FN(ServerListener::OnKeepAlive));
@@ -180,6 +181,46 @@ namespace Anarchy
 			{
 				response.Entities.push_back(ServerState::Get().GetEntities().GetDataFromEntity(entity));
 			}
+			return response;
+		}
+		return {};
+	}
+
+	std::optional<GetTilemapResponse> ServerListener::GetTilemap(const ServerRequest<ServerNetworkMessage<GetTilemapRequest>>& request)
+	{
+		std::scoped_lock<std::mutex> lock(m_Mutex);
+		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Get Tilemap Request Received", request.Request.ConnectionId, request.Request.Header.SequenceId);
+		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
+		if (connection != nullptr && IsSeqIdGreater(request.Request.Header.SequenceId, connection->GetRemoteSequenceId()))
+		{
+			HandleIncomingMessage(request.Request);
+			connection->SetRemoteSequenceId(request.Request.Header.SequenceId);
+			connection->IncrementSequenceId();
+			connection->ResetTimeSinceLastPacket();
+			connection->ResetTimeSinceLastSentPacket();
+			BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Get Tilemap Response", request.Request.ConnectionId, connection->GetSequenceId());
+			WorldReader& world = ServerState::Get().GetWorld();
+			const GetTilemapRequest& tileRequest = request.Request.Message;
+			int x = tileRequest.x;
+			int y = tileRequest.y;
+			int width = tileRequest.Width;
+			int height = tileRequest.Height;
+			if (x < 0)
+				x = 0;
+			if (y < 0)
+				y = 0;
+			if (x + width >= world.GetWidthInTiles())
+				width = world.GetWidthInTiles() - x - 1;
+			if (y + height >= world.GetHeightInTiles())
+				height = world.GetHeightInTiles() - y - 1;
+			GetTilemapResponse response;
+			response.x = x;
+			response.y = y;
+			response.Width = width;
+			response.Height = height;
+			response.Tiles.resize((size_t)response.Width * (size_t)response.Height);
+			TileView tiles = world.GetTiles((uint32_t)x, (uint32_t)y, (uint32_t)width, (uint32_t)height);
+			memcpy(response.Tiles.data(), tiles.GetTiles(), response.Tiles.size() * sizeof(TileType));
 			return response;
 		}
 		return {};

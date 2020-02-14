@@ -3,6 +3,7 @@
 #include "GameState.h"
 
 #include "Lib/Entities/EntityActions.h"
+#include "World/Tile.h"
 
 namespace Anarchy
 {
@@ -171,6 +172,72 @@ namespace Anarchy
 	inline void Deserialize(InputMemoryStream& stream, UpdateEntitiesRequest& request)
 	{
 		Deserialize(stream, request.Updates);
+	}
+
+	// =======================================================================================
+	// GET TILEMAP
+	// =======================================================================================
+
+	struct GetTilemapRequest
+	{
+	public:
+		static constexpr MessageType Type = MessageType::GetTilemapRequest;
+
+	public:
+		int DimensionId;
+		int x;
+		int y;
+		int Width;
+		int Height;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const GetTilemapRequest& request)
+	{
+		Serialize(stream, request.DimensionId);
+		Serialize(stream, request.x);
+		Serialize(stream, request.y);
+		Serialize(stream, request.Width);
+		Serialize(stream, request.Height);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, GetTilemapRequest& request)
+	{
+		Deserialize(stream, request.DimensionId);
+		Deserialize(stream, request.x);
+		Deserialize(stream, request.y);
+		Deserialize(stream, request.Width);
+		Deserialize(stream, request.Height);
+	}
+
+	struct GetTilemapResponse
+	{
+	public:
+		static constexpr MessageType Type = MessageType::GetTilemapResponse;
+
+	public:
+		int x;
+		int y;
+		int Width;
+		int Height;
+		std::vector<TileType> Tiles;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const GetTilemapResponse& response)
+	{
+		Serialize(stream, response.x);
+		Serialize(stream, response.y);
+		Serialize(stream, response.Width);
+		Serialize(stream, response.Height);
+		Serialize(stream, response.Tiles);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, GetTilemapResponse& response)
+	{
+		Deserialize(stream, response.x);
+		Deserialize(stream, response.y);
+		Deserialize(stream, response.Width);
+		Deserialize(stream, response.Height);
+		Deserialize(stream, response.Tiles);
 	}
 
 }

@@ -49,7 +49,7 @@ def main():
     parser.add_argument("--ytiles-per-chunk", type=int, required=False, default=256, help="Number of tiles per chunk in height direction")
     parser.add_argument("--heightmap", type=str, required=True, help="Heightmap filename")
     parser.add_argument("--scaling", type=float, required=False, default=1.0, help="Scaling for converting image pixels to tiles")
-    parser.add_argument("-o", type=str, required=False, default="./", help="Directory for root of the world")
+    parser.add_argument("-o", type=str, required=False, default="./World", help="Directory for root of the world")
     parser.add_argument("-i", "--image", type=str, required=False, help="Generate an image of the tilemap")
 
     args = parser.parse_args()

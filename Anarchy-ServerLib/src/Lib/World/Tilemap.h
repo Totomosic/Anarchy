@@ -17,22 +17,22 @@ namespace Anarchy
 			int m_Height;
 			int m_OriginalWidth;
 			int m_OriginalHeight;
-			Tile* m_Tiles;
+			TileType* m_Tiles;
 
 		public:
-			View(int x, int y, int width, int height, int originalWidth, int originalHeight, Tile* tiles);
+			View(int x, int y, int width, int height, int originalWidth, int originalHeight, TileType* tiles);
 
 			int GetWidth() const;
 			int GetHeight() const;
-			const Tile* GetTiles() const;
+			const TileType* GetTiles() const;
 			bool ValidateCoordinate(int x, int y) const;
 
-			const Tile* GetTile(int x, int y) const;
+			const TileType* GetTile(int x, int y) const;
 			View GetTiles(int x, int y, int width, int height) const;
 		};
 
 	private:
-		std::unique_ptr<Tile[]> m_Tiles;
+		std::unique_ptr<TileType[]> m_Tiles;
 		Tilemap::View m_View;
 
 	public:
@@ -42,9 +42,9 @@ namespace Anarchy
 		int GetHeight() const;
 		const View& GetView() const;
 
-		void SetTile(int x, int y, const Tile& tile);
-		void SetTiles(int x, int y, int width, int height, const Tile& tile);
-		void SetTiles(int x, int y, int width, int height, const Tile* tiles);
+		void SetTile(int x, int y, const TileType& tile);
+		void SetTiles(int x, int y, int width, int height, const TileType& tile);
+		void SetTiles(int x, int y, int width, int height, const TileType* tiles);
 
 	private:
 		int64_t GetIndex(int x, int y) const;

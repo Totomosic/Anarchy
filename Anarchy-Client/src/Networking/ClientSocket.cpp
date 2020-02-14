@@ -34,7 +34,7 @@ namespace Anarchy
 	{
 		Task task = TaskManager::Get().Run([this]()
 			{
-				std::byte buffer[MaxPacketSize];
+				std::byte buffer[26000];
 				while (true)
 				{
 					SocketAddress from;

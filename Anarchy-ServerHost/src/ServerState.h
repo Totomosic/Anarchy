@@ -5,6 +5,7 @@
 #include "Entities/ServerEntityCollection.h"
 
 #include "Debug/DebugCommandManager.h"
+#include "Lib/World/Reader/WorldReader.h"
 
 namespace Anarchy
 {
@@ -17,6 +18,7 @@ namespace Anarchy
 		ConnectionsManager m_Connections;
 
 		std::unique_ptr<ServerEntityCollection> m_Entities;
+		WorldReader m_WorldReader;
 
 		DebugCommandManager m_DebugCommands;
 
@@ -38,6 +40,8 @@ namespace Anarchy
 
 		const ServerEntityCollection& GetEntities() const;
 		ServerEntityCollection& GetEntities();
+		const WorldReader& GetWorld() const;
+		WorldReader& GetWorld();
 
 	};
 

@@ -45,15 +45,24 @@ namespace Anarchy
 			{
 				for (int j = 0; j < m_Tilemap->GetHeight(); j++)
 				{
-					const Tile* tile = view.GetTile(i, j);
+					const TileType* tile = view.GetTile(i, j);
 					Color color;
-					switch (tile->Type)
+					switch (*tile)
 					{
 					case TileType::None:
 						color = Color::Black;
 						break;
 					case TileType::Grass:
 						color = Color(50, 200, 50);
+						break;
+					case TileType::Sand:
+						color = Color(255, 255, 0);
+						break;
+					case TileType::Water:
+						color = Color(0, 0, 255);
+						break;
+					case TileType::Stone:
+						color = Color(200, 200, 200);
 						break;
 					default:
 						color = Color::Black;

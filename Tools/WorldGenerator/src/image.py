@@ -3,7 +3,7 @@ from PIL import Image
 import tiles
 
 def create_image(tile_data):
-    colors = tiles.TILE_COLOR_ARRAY[tile_data.T]
+    colors = tiles.TILE_COLOR_ARRAY[numpy.flip(tile_data, axis=0)]
     image = Image.fromarray(colors)
     return image
 

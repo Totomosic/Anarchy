@@ -27,6 +27,7 @@ namespace Anarchy
 
 		virtual std::optional<CreateCharacterResponse> CreateCharacter(const ServerRequest<ServerNetworkMessage<CreateCharacterRequest>>& request) = 0;
 		virtual std::optional<GetEntitiesResponse> GetEntities(const ServerRequest<ServerNetworkMessage<GetEntitiesRequest>>& request) = 0;
+		virtual std::optional<GetTilemapResponse> GetTilemap(const ServerRequest<ServerNetworkMessage<GetTilemapRequest>>& request) = 0;
 
 		virtual void SpawnEntities(const std::vector<connid_t>& connections, const SpawnEntitiesRequest& request, connid_t ownerConnectionId) = 0;
 		virtual void DestroyEntities(const std::vector<connid_t>& connections, const DestroyEntitiesRequest& request) = 0;
@@ -50,6 +51,7 @@ namespace Anarchy
 
 		virtual Promise<CreateCharacterResponse> CreateCharacter(const CreateCharacterRequest& request, double timeoutSeconds) = 0;
 		virtual Promise<GetEntitiesResponse> GetEntities(const GetEntitiesRequest& request, double timeoutSeconds) = 0;
+		virtual Promise<GetTilemapResponse> GetTilemap(const GetTilemapRequest& request, double timeoutSeconds) = 0;
 
 		virtual void SpawnEntities(const NetworkMessage<SpawnEntitiesRequest>& request) = 0;
 		virtual void DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request) = 0;

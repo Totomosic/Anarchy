@@ -224,6 +224,26 @@ namespace Anarchy
 			});
 	}
 
+	ClientSocketApi::Promise<GetTilemapResponse> ClientListener::GetTilemap(const GetTilemapRequest& request, double timeoutSeconds)
+	{
+		BLT_ASSERT(IsConnected(), "Must be connected");
+		return TaskManager::Get().Run([this, request, timeoutSeconds]()
+			{
+				IncrementSequenceId();
+				ResetTimeSinceLastSentMessage();
+				auto message = CreateMessage(request);
+				HandleOutgoingMessage(message);
+				auto response = AwaitResponse<GetTilemapResponse>(message, timeoutSeconds);
+				if (response && IsSeqIdGreater(response->Header.SequenceId, GetRemoteSequenceId()))
+				{
+					ResetTimeSinceLastReceivedMessage();
+					SetRemoteSequenceId(response->Header.SequenceId);
+					return MakeOptional(response);
+				}
+				return std::optional<GetTilemapResponse>();
+			});
+	}
+
 	void ClientListener::SpawnEntities(const NetworkMessage<SpawnEntitiesRequest>& request)
 	{
 		if (IsSeqIdGreater(request.Header.SequenceId, GetRemoteSequenceId()))

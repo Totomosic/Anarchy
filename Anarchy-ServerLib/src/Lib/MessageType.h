@@ -7,6 +7,8 @@ namespace Anarchy
 	enum class MessageType : uint16_t
 	{
 		None,
+		ChunkSlice,
+
 		KeepAlive,
 
 		ConnectRequest,
@@ -24,6 +26,9 @@ namespace Anarchy
 		SpawnEntities,
 		DestroyEntities,
 		UpdateEntities,
+
+		GetTilemapRequest,
+		GetTilemapResponse,
 
 		InputCommand
 	};

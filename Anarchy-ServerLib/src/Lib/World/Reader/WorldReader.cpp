@@ -141,7 +141,8 @@ namespace Anarchy
 				{
 					uint32_t index = xOffset + row * GetXTilesPerChunk();
 					uint32_t rowWidth = xEnd - xOffset + 1;
-					memcpy(result.get() + ((size_t)baseX + ((size_t)baseY + (size_t)rowIndex) * (size_t)width), data + index, rowWidth * sizeof(TileType));
+					size_t destIndex = ((size_t)baseX + ((size_t)baseY + (size_t)rowIndex) * (size_t)width);
+					memcpy(result.get() + destIndex, data + index, rowWidth * sizeof(TileType));
 					currentX = baseX + rowWidth;
 					rowIndex += 1;
 				}

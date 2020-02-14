@@ -67,7 +67,7 @@ def main():
     parser.add_argument("--height", type=int, required=True, help="Height of world in number of tiles")
     parser.add_argument("--xtiles-per-chunk", type=int, required=False, default=256, help="Number of tiles per chunk in width direction")
     parser.add_argument("--ytiles-per-chunk", type=int, required=False, default=256, help="Number of tiles per chunk in height direction")
-    parser.add_argument("-o", type=str, required=False, default="./", help="Directory for root of the world")
+    parser.add_argument("-o", type=str, required=False, default="./World", help="Directory for root of the world")
 
     args = parser.parse_args()
 
