@@ -39,7 +39,7 @@ namespace Anarchy
 	{
 		Task task = TaskManager::Get().Run([this]()
 			{
-				std::byte buffer[26000];
+				std::byte buffer[MaxPacketSize];
 				while (true)
 				{
 					SocketAddress from;
@@ -51,7 +51,24 @@ namespace Anarchy
 						ServerMessageReceived e;
 						Deserialize(stream, e.Type);
 						e.Data = std::move(stream);
-						OnMessageReceived().Emit(std::move(e));
+						if (e.Type == MessageType::ChunkSlice)
+						{
+							std::optional<InputMemoryStream> result = m_ChunkReceiver.HandleSlicePacket(from, e.Data);
+							if (result)
+							{
+								Deserialize(*result, e.Type);
+								e.Data = std::move(*result);
+								OnMessageReceived().Emit(std::move(e));
+							}
+						}
+						else if (e.Type == MessageType::ChunkAck)
+						{
+							m_ChunkSender.HandleAckPacket(e.Data);
+						}
+						else
+						{
+							OnMessageReceived().Emit(std::move(e));
+						}
 					}
 					else
 					{

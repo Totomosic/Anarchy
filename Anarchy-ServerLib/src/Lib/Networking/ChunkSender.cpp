@@ -5,9 +5,14 @@ namespace Anarchy
 {
 
 	ChunkSender::ChunkSender(UDPsocket* socket)
-		: m_InProgressChunks(), m_NextChunkId(0), m_Socket(socket), m_StartTime()
+		: m_InProgressChunks(), m_NextChunkId(0), m_MaxBytesPerSecond(1024 * 1024 / 8), m_BytesSent(0), m_Socket(socket), m_StartTime()
 	{
 		m_StartTime = std::chrono::high_resolution_clock::now();
+	}
+
+	size_t ChunkSender::GetMaxBytesPerSecond() const
+	{
+		return m_MaxBytesPerSecond;
 	}
 
 	bool ChunkSender::CanSendPacket() const
@@ -15,7 +20,12 @@ namespace Anarchy
 		return true;
 	}
 
-	void ChunkSender::SendPacket(const SocketAddress& to, const void* data, uint32_t size)
+	void ChunkSender::SetMaxBytesPerSecond(size_t bytesPerSecond)
+	{
+		m_MaxBytesPerSecond = bytesPerSecond;
+	}
+
+	void ChunkSender::SendPacket(const SocketAddress& to, const void* data, uint32_t size, size_t millisecondsForResend)
 	{
 		BLT_ASSERT(size <= MaxChunkSize, "Packet too large");
 		if (CanSendPacket())
@@ -30,45 +40,58 @@ namespace Anarchy
 			chunk.ReceiverAddress = to;
 			chunk.ChunkId = id;
 			chunk.NumAckedSlices = 0;
+			chunk.MillisecondsUntilResend = millisecondsForResend;
+			chunk.MaxRetries = 10;
 			memset(chunk.Acked, 0, sizeof(chunk.Acked));
-			memset(chunk.TimeLastSent, 0, sizeof(chunk.TimeLastSent));
+			memset(chunk.TimeLastSentMilliseconds, 0, sizeof(chunk.TimeLastSentMilliseconds));
 			memcpy(chunk.ChunkData, data, size);
 		}
 	}
 
 	void ChunkSender::Update(TimeDelta dt)
 	{
-		size_t timeElapsedMilliseconds = 100;
-		size_t maxBytes = (size_t)(1 * 1024 * 1024 * dt.Seconds());
-		size_t totalSentBytes = 0;
+		size_t maxBytes = (size_t)(GetMaxBytesPerSecond() * dt.Seconds()) + 1;
+		m_BytesSent = std::max(m_BytesSent - int64_t(maxBytes), int64_t(0));
 		bool sent = true;
-		while (totalSentBytes < maxBytes && sent)
+		while (m_BytesSent < maxBytes && sent)
 		{
 			sent = false;
-			for (ChunkData& chunk : m_InProgressChunks)
+			for (int i = 0; i < m_InProgressChunks.size(); i++)
 			{
+				ChunkData& chunk = m_InProgressChunks[i];
 				size_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - m_StartTime).count();
-				if (!chunk.Acked[chunk.CurrentSliceIndex] && chunk.TimeLastSent[chunk.CurrentSliceIndex] + timeElapsedMilliseconds < timestamp)
+				if (!chunk.Acked[chunk.CurrentSliceIndex] && chunk.TimeLastSentMilliseconds[chunk.CurrentSliceIndex] + chunk.MillisecondsUntilResend < timestamp)
 				{
-					chunk.TimeLastSent[chunk.CurrentSliceIndex] = timestamp;
+					chunk.TimeLastSentMilliseconds[chunk.CurrentSliceIndex] = timestamp;
 					int sliceSize = (chunk.CurrentSliceIndex == chunk.NumSlices - 1) ? CalculateFinalChunkSize(chunk.ChunkSize) : MaxSliceSize;
 					ChunkSlicePacket packet;
 					packet.ChunkId = chunk.ChunkId;
 					packet.NumSlices = chunk.NumSlices;
 					packet.SliceIndex = chunk.CurrentSliceIndex;
 					packet.SliceBytes = sliceSize;
-					memcpy(packet.Data, chunk.ChunkData + packet.SliceIndex * MaxSliceSize, sliceSize);
+					memcpy(packet.Data, chunk.ChunkData + (int64_t)packet.SliceIndex * MaxSliceSize, sliceSize);
 
 					OutputMemoryStream stream(sizeof(ChunkSlicePacket));
 					Serialize(stream, MessageType::ChunkSlice);
 					Serialize(stream, packet);
 					m_Socket->SendTo(chunk.ReceiverAddress, stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
 
-					totalSentBytes += sliceSize;
+					m_BytesSent += sliceSize;
 					sent = true;
+
+					if (chunk.CurrentSliceIndex >= chunk.NumSlices - 1)
+					{
+						chunk.MaxRetries -= 1;
+						if (chunk.MaxRetries <= 0)
+						{
+							BLT_INFO("Max retries exceeded, Chunk {}", chunk.ChunkId);
+							m_InProgressChunks.erase(m_InProgressChunks.begin() + i);
+							break;
+						}
+					}
 				}
 				chunk.CurrentSliceIndex = (chunk.CurrentSliceIndex + 1) % chunk.NumSlices;
-				if (totalSentBytes >= maxBytes)
+				if (m_BytesSent >= maxBytes)
 					break;
 			}
 		}

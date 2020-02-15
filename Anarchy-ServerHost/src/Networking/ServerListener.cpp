@@ -121,16 +121,14 @@ namespace Anarchy
 		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
 		if (connection != nullptr)
 		{
-			if (IsSeqIdGreater(request.Request.Header.SequenceId, connection->GetRemoteSequenceId()) && ServerState::Get().GetConnections().RemoveConnection(request.Request.ConnectionId))
-			{
 				HandleIncomingMessage(request.Request);
 				connection->SetRemoteSequenceId(request.Request.Header.SequenceId);
 				connection->IncrementSequenceId();
 				CleanupConnection(request.Request.ConnectionId);
+				ServerState::Get().GetConnections().RemoveConnection(request.Request.ConnectionId);
 				BLT_INFO("[ConnectionId={0}] [SequenceId={1}] Sending Disconnect Response", request.Request.ConnectionId, GetSequenceId(request.Request.ConnectionId));
 				ServerDisconnectResponse response;
 				return response;
-			}
 		}
 		return {};
 	}
@@ -140,7 +138,7 @@ namespace Anarchy
 		std::scoped_lock<std::mutex> lock(m_Mutex);
 		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Create Character Request Received", request.Request.ConnectionId, request.Request.Header.SequenceId);
 		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
-		if (connection != nullptr && IsSeqIdGreater(request.Request.Header.SequenceId, connection->GetRemoteSequenceId()))
+		if (connection != nullptr)
 		{
 			HandleIncomingMessage(request.Request);
 			CreateCharacterResponse response;
@@ -169,7 +167,7 @@ namespace Anarchy
 		std::scoped_lock<std::mutex> lock(m_Mutex);
 		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Get Entities Request Received", request.Request.ConnectionId, request.Request.Header.SequenceId);
 		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
-		if (connection != nullptr && IsSeqIdGreater(request.Request.Header.SequenceId, connection->GetRemoteSequenceId()))
+		if (connection != nullptr)
 		{
 			HandleIncomingMessage(request.Request);
 			connection->SetRemoteSequenceId(request.Request.Header.SequenceId);
@@ -192,7 +190,7 @@ namespace Anarchy
 		std::scoped_lock<std::mutex> lock(m_Mutex);
 		BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Get Tilemap Request Received", request.Request.ConnectionId, request.Request.Header.SequenceId);
 		ClientConnection* connection = GetConnection(request.Request.ConnectionId);
-		if (connection != nullptr && IsSeqIdGreater(request.Request.Header.SequenceId, connection->GetRemoteSequenceId()))
+		if (connection != nullptr)
 		{
 			HandleIncomingMessage(request.Request);
 			connection->SetRemoteSequenceId(request.Request.Header.SequenceId);

@@ -44,7 +44,24 @@ namespace Anarchy
 						e.From = from;
 						Deserialize(stream, e.Type);
 						e.Data = std::move(stream);
-						OnMessageReceived().Emit(std::move(e));
+						if (e.Type == MessageType::ChunkSlice)
+						{
+							std::optional<InputMemoryStream> result = m_ChunkReceiver.HandleSlicePacket(e.From, e.Data);
+							if (result)
+							{
+								Deserialize(*result, e.Type);
+								e.Data = std::move(*result);
+								OnMessageReceived().Emit(std::move(e));
+							}
+						}
+						else if (e.Type == MessageType::ChunkAck)
+						{
+							m_ChunkSender.HandleAckPacket(e.Data);
+						}
+						else
+						{
+							OnMessageReceived().Emit(std::move(e));
+						}
 					}
 				}
 			});		

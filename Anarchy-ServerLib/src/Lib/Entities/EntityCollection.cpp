@@ -56,8 +56,11 @@ namespace Anarchy
 
 	EntityHandle EntityCollection::GetEntityByNetworkId(entityid_t networkId) const
 	{
-		BLT_ASSERT(HasEntity(networkId), "Entity with network id does not exist");
-		return m_EntityMap.at(networkId);
+		if (HasEntity(networkId))
+		{
+			return m_EntityMap.at(networkId);
+		}
+		return EntityHandle();
 	}
 
 	EntityHandle EntityCollection::CreateEntity(entityid_t networkId, const EntityHandle& entity)

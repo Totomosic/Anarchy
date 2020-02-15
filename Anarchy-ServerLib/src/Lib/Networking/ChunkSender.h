@@ -18,8 +18,10 @@ namespace Anarchy
 			int NumAckedSlices = 0;
 			bool Acked[MaxSlicesPerChunk];
 			uint8_t ChunkData[MaxChunkSize];
-			double TimeLastSent[MaxSlicesPerChunk];
+			size_t TimeLastSentMilliseconds[MaxSlicesPerChunk];
+			size_t MillisecondsUntilResend;
 			SocketAddress ReceiverAddress;
+			int MaxRetries;
 		};
 
 	private:
@@ -27,13 +29,21 @@ namespace Anarchy
 		chunkid_t m_NextChunkId;
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTime;
 
+		size_t m_MaxBytesPerSecond;
+		int64_t m_BytesSent;
+
 		UDPsocket* m_Socket;
 
 	public:
 		ChunkSender(UDPsocket* socket);
 
+		size_t GetMaxBytesPerSecond() const;
 		bool CanSendPacket() const;
-		void SendPacket(const SocketAddress& to, const void* data, uint32_t size);
+		void SetMaxBytesPerSecond(size_t bytesPerSecond);
+
+		// Send the data block as a stream of slices
+		// Use millisecondsForResend to account for varying RTT between clients (a good default is RTT * 1.25)
+		void SendPacket(const SocketAddress& to, const void* data, uint32_t size, size_t millisecondsForResend = 100);
 
 		void Update(TimeDelta dt);
 		void HandleAckPacket(InputMemoryStream& stream);

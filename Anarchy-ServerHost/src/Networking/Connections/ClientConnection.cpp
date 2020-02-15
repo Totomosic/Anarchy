@@ -36,7 +36,10 @@ namespace Anarchy
 
 	void ClientConnection::SetSequenceId(seqid_t sequenceId)
 	{
-		m_SequenceId = sequenceId;
+		if (IsSeqIdGreater(sequenceId, m_SequenceId))
+		{
+			m_SequenceId = sequenceId;
+		}
 	}
 
 	void ClientConnection::IncrementSequenceId(seqid_t amount)
@@ -51,7 +54,10 @@ namespace Anarchy
 
 	void ClientConnection::SetRemoteSequenceId(seqid_t sequenceId)
 	{
-		m_RemoteSequenceId = sequenceId;
+		if (IsSeqIdGreater(sequenceId, m_RemoteSequenceId))
+		{
+			m_RemoteSequenceId = sequenceId;
+		}
 	}
 
 	uint32_t ClientConnection::GetTimeSinceLastPacket() const

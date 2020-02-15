@@ -152,7 +152,7 @@ namespace Anarchy
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<ServerConnectionResponse>(message, timeoutSeconds);
 				m_Connecting = false;
-				if (response && IsSeqIdGreater(response->Header.SequenceId, GetRemoteSequenceId()))
+				if (response)
 				{
 					ResetTimeSinceLastReceivedMessage();
 					m_ConnectionId = response->Message.ConnectionId;
@@ -195,7 +195,7 @@ namespace Anarchy
 				auto message = CreateMessage(request);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<CreateCharacterResponse>(message, timeoutSeconds);
-				if (response && IsSeqIdGreater(response->Header.SequenceId, GetRemoteSequenceId()))
+				if (response)
 				{
 					ResetTimeSinceLastReceivedMessage();
 					SetRemoteSequenceId(response->Header.SequenceId);
@@ -215,7 +215,7 @@ namespace Anarchy
 				auto message = CreateMessage(request);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<GetEntitiesResponse>(message, timeoutSeconds);
-				if (response && IsSeqIdGreater(response->Header.SequenceId, GetRemoteSequenceId()))
+				if (response)
 				{
 					ResetTimeSinceLastReceivedMessage();
 					SetRemoteSequenceId(response->Header.SequenceId);
@@ -235,7 +235,7 @@ namespace Anarchy
 				auto message = CreateMessage(request);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<GetTilemapResponse>(message, timeoutSeconds);
-				if (response && IsSeqIdGreater(response->Header.SequenceId, GetRemoteSequenceId()))
+				if (response)
 				{
 					ResetTimeSinceLastReceivedMessage();
 					SetRemoteSequenceId(response->Header.SequenceId);
@@ -261,15 +261,12 @@ namespace Anarchy
 
 	void ClientListener::DestroyEntities(const NetworkMessage<DestroyEntitiesRequest>& request)
 	{
-		if (IsSeqIdGreater(request.Header.SequenceId, GetRemoteSequenceId()))
+		HandleIncomingMessage(request);
+		ResetTimeSinceLastReceivedMessage();
+		SetRemoteSequenceId(request.Header.SequenceId);
+		for (entityid_t entity : request.Message.Entities)
 		{
-			HandleIncomingMessage(request);
-			ResetTimeSinceLastReceivedMessage();
-			SetRemoteSequenceId(request.Header.SequenceId);
-			for (entityid_t entity : request.Message.Entities)
-			{
-				ClientState::Get().GetEntities().RemoveEntity(entity);
-			}
+			ClientState::Get().GetEntities().RemoveEntity(entity);
 		}
 	}
 
@@ -315,7 +312,10 @@ namespace Anarchy
 
 	void ClientListener::SetRemoteSequenceId(seqid_t seqId)
 	{
-		m_RemoteSequenceId = seqId;
+		if (IsSeqIdGreater(seqId, m_RemoteSequenceId))
+		{
+			m_RemoteSequenceId = seqId;
+		}
 	}
 
 	void ClientListener::ResetTimeSinceLastReceivedMessage()

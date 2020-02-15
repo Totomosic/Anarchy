@@ -63,7 +63,14 @@ namespace Anarchy
 			OutputMemoryStream stream;
 			Serialize(stream, type);
 			Serialize(stream, data);
-			m_Socket.SendTo(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+			if (stream.GetRemainingDataSize() <= MaxPacketSize)
+			{
+				m_Socket.SendTo(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+			}
+			else
+			{
+				m_ChunkSender.SendPacket(to, stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+			}
 		}
 	};
 
