@@ -77,7 +77,6 @@ namespace Anarchy
 
 	void CreateGameScene(Scene& scene, const Window& window)
 	{
-		
 		scene.OnLoad().AddEventListener([&scene](Event<SceneLoadEvent>& e)
 			{
 				CreateCharacterRequest request;
@@ -98,16 +97,11 @@ namespace Anarchy
 					ClientState::Get().InitializeEntities(scene, gameLayer);
 					ClientEntityCollection& entities = ClientState::Get().GetEntities();
 
-					ClientState::Get().GetTilemap().SetTiles(0, 0, width, height, TileType::Grass);
-
-					ClientState::Get().GetConnection().GetSocketApi().GetTilemap({ 0, 160, 330, width, height }).ContinueWithOnMainThread([](std::optional<GetTilemapResponse>& response)
-						{
-							if (response)
-							{
-								ClientState::Get().GetTilemap().SetTiles(0, 0, response->Width, response->Height, response->Tiles.data());
-								ClientState::Get().GetTilemapRenderer().Invalidate();
-							}
-						});
+					std::optional<GetTilemapResponse> tileResponse = ClientState::Get().GetConnection().GetSocketApi().GetTilemap({ 0, 160, 330, width, height }).Result();
+					if (tileResponse)
+					{
+						ClientState::Get().GetTilemap().SetTiles(0, 0, tileResponse->Width, tileResponse->Height, tileResponse->Tiles.data());
+					}
 
 					EntityHandle player = entities.CreateFromEntityData(character->Data);
 					ComponentHandle controller = player.Assign<CPlayerController>();

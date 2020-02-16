@@ -5,7 +5,7 @@ namespace Anarchy
 {
 
 	ConnectionsManager::ConnectionsManager()
-		: m_IdManager(0, std::numeric_limits<connid_t>::max()), m_Connections()
+		: m_NextConnectionId(0), m_Connections()
 	{
 	}
 
@@ -16,12 +16,12 @@ namespace Anarchy
 
 	const ClientConnection& ConnectionsManager::GetConnection(connid_t id) const
 	{
-		return m_Connections.at(id);
+		return *m_Connections.at(id);
 	}
 
 	ClientConnection& ConnectionsManager::GetConnection(connid_t id)
 	{
-		return m_Connections.at(id);
+		return *m_Connections.at(id);
 	}
 
 	std::vector<const ClientConnection*> ConnectionsManager::GetConnections() const
@@ -29,7 +29,7 @@ namespace Anarchy
 		std::vector<const ClientConnection*> result;
 		for (const auto& pair : m_Connections)
 		{
-			result.push_back(&pair.second);
+			result.push_back(pair.second.get());
 		}
 		return result;
 	}
@@ -39,7 +39,7 @@ namespace Anarchy
 		std::vector<ClientConnection*> result;
 		for (auto& pair : m_Connections)
 		{
-			result.push_back(&pair.second);
+			result.push_back(pair.second.get());
 		}
 		return result;
 	}
@@ -95,8 +95,8 @@ namespace Anarchy
 
 	ClientConnection& ConnectionsManager::AddConnection(const std::string& username, const SocketAddress& address)
 	{
-		connid_t id = m_IdManager.GetNextId();
-		m_Connections[id] = ClientConnection(username, id, address);
+		connid_t id = GetNextConnectionId();
+		m_Connections[id] = std::make_unique<ClientConnection>(username, id, address);
 		return GetConnection(id);
 	}
 
@@ -105,10 +105,19 @@ namespace Anarchy
 		if (m_Connections.find(id) != m_Connections.end())
 		{
 			m_Connections.erase(id);
-			m_IdManager.ReleaseId(id);
 			return true;
 		}
 		return false;
+	}
+
+	connid_t ConnectionsManager::GetNextConnectionId()
+	{
+		connid_t id = m_NextConnectionId++;
+		if (m_Connections.find(id) != m_Connections.end())
+		{
+			return GetNextConnectionId();
+		}
+		return id;
 	}
 
 }

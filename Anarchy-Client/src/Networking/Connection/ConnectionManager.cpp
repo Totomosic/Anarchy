@@ -8,7 +8,7 @@ namespace Anarchy
 {
 
 	ConnectionManager::ConnectionManager(const SocketAddress& address)
-		: m_Socket(address), m_Listener(m_Socket)
+		: m_Socket(address), m_Listener(&m_Socket)
 	{
 		
 	}

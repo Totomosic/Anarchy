@@ -25,7 +25,7 @@ namespace Anarchy
 		connid_t m_ConnectionId;
 		bool m_Connecting;
 
-		ClientSocket& m_Socket;
+		ClientSocket* m_Socket;
 
 		seqid_t m_SequenceId;
 		seqid_t m_RemoteSequenceId;
@@ -42,7 +42,7 @@ namespace Anarchy
 		ActionBuffer m_Actions;
 
 	public:
-		ClientListener(ClientSocket& socket);
+		ClientListener(ClientSocket* socket);
 		~ClientListener();
 
 		seqid_t GetSequenceId() const;
@@ -82,12 +82,9 @@ namespace Anarchy
 			BLT_ASSERT(m_MessageHandlers.find(messageType) == m_MessageHandlers.end(), "Handler already exists for message type");
 			m_MessageHandlers[messageType] = [this, callback](InputMemoryStream& stream)
 			{
-				m_TaskManager.RunOnMainThread(make_shared_function([callback, stream{ std::move(stream) }]() mutable
-				{
-					NetworkMessage<TRequest> request;
-					Deserialize(stream, request);
-					callback(request);
-				}));
+				NetworkMessage<TRequest> request;
+				Deserialize(stream, request);
+				callback(request);
 			};
 		}
 

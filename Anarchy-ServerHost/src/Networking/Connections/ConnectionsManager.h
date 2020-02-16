@@ -8,8 +8,8 @@ namespace Anarchy
 	class ConnectionsManager
 	{
 	private:
-		IdManager<connid_t> m_IdManager;
-		std::unordered_map<connid_t, ClientConnection> m_Connections;
+		connid_t m_NextConnectionId;
+		std::unordered_map<connid_t, std::unique_ptr<ClientConnection>> m_Connections;
 
 	public:
 		ConnectionsManager();
@@ -28,6 +28,9 @@ namespace Anarchy
 
 		ClientConnection& AddConnection(const std::string& username, const SocketAddress& address);
 		bool RemoveConnection(connid_t id);
+
+	private:
+		connid_t GetNextConnectionId();
 	};
 
 }
