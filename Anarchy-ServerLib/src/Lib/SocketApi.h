@@ -1,5 +1,5 @@
 #pragma once
-#include "Authentication.h"
+#include "RequestMessages.h"
 #include "GameMessages.h"
 #include "Entities/EntityActions.h"
 #include "Core/Tasks/Task.h"

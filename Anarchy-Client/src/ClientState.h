@@ -2,6 +2,7 @@
 #include "Networking/Connection/ConnectionManager.h"
 #include "Entities/ClientEntityCollection.h"
 #include "World/TilemapRenderer.h"
+#include "World/Tilemap.h"
 
 namespace Anarchy
 {
@@ -14,7 +15,6 @@ namespace Anarchy
 	private:
 		std::unique_ptr<ConnectionManager> m_Connection;
 		std::unique_ptr<Tilemap> m_Tilemap;
-		std::unique_ptr<TilemapRenderer> m_TilemapRenderer;
 		std::unique_ptr<ClientEntityCollection> m_Entities;
 
 	public:
@@ -41,8 +41,6 @@ namespace Anarchy
 		bool HasTilemap() const;
 		const Tilemap& GetTilemap() const;
 		Tilemap& GetTilemap();
-		const TilemapRenderer& GetTilemapRenderer() const;
-		TilemapRenderer& GetTilemapRenderer();
 		void DestroyTilemap();
 
 	};

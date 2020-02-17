@@ -9,6 +9,8 @@
 #include "Lib/Entities/Components/TilePosition.h"
 #include "Entities/Components/TileMotion.h"
 
+#include "World/Tilemap.h"
+
 namespace Anarchy
 {
 
@@ -96,12 +98,6 @@ namespace Anarchy
 					ClientState::Get().InitializeTilemap(scene, mapLayer, width, height);
 					ClientState::Get().InitializeEntities(scene, gameLayer);
 					ClientEntityCollection& entities = ClientState::Get().GetEntities();
-
-					std::optional<GetTilemapResponse> tileResponse = ClientState::Get().GetConnection().GetSocketApi().GetTilemap({ 0, 160, 330, width, height }).Result();
-					if (tileResponse)
-					{
-						ClientState::Get().GetTilemap().SetTiles(0, 0, tileResponse->Width, tileResponse->Height, tileResponse->Tiles.data());
-					}
 
 					EntityHandle player = entities.CreateFromEntityData(character->Data);
 					ComponentHandle controller = player.Assign<CPlayerController>();

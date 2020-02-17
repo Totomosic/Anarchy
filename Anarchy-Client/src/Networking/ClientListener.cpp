@@ -11,7 +11,8 @@ namespace Anarchy
 
 	ClientListener::ClientListener(ClientSocket* socket)
 		: m_Bus(), m_TaskManager(m_Bus), m_OnDisconnect(m_Bus.GetEmitter<ServerDisconnect>(ClientEvents::DisconnectedFromServer)), m_ConnectionId(InvalidConnectionId), m_Connecting(false),
-		m_Socket(socket), m_SequenceId(0), m_RemoteSequenceId(0), m_Listener(), m_MessageHandlers(), m_TimeSinceLastReceivedMessage(0), m_TimeSinceLastSentMessage(0), m_ReceivedMessages(), m_SentMessages(), m_Actions()
+		m_Socket(socket), m_SequenceId(0), m_RemoteSequenceId(0), m_NextRequestId(0), m_Listener(), m_MessageHandlers(), m_RequestMutex(), m_RequestHandlers(),
+		m_TimeSinceLastReceivedMessage(0), m_TimeSinceLastSentMessage(0), m_ReceivedMessages(), m_SentMessages(), m_Actions()
 	{
 		Register<KeepAlivePacket>(ANCH_BIND_LISTENER_FN(ClientListener::OnKeepAlive));
 
@@ -29,6 +30,20 @@ namespace Anarchy
 				{
 					it->second(e.Data.Data);
 					e.StopPropagation();
+				}
+				else
+				{
+					MessageCategory	category = GetMessageCategory(type);
+					if (category == MessageCategory::Response)
+					{
+						ResponseHeader header;
+						Deserialize(e.Data.Data, header);
+						auto it = m_RequestHandlers.find(header.RequestId);
+						if (it != m_RequestHandlers.end())
+						{
+							it->second(e.Data.Data);
+						}
+					}
 				}
 			});
 	}
@@ -144,11 +159,11 @@ namespace Anarchy
 		BLT_ASSERT(!IsConnected() && !IsConnecting(), "Cannot connect now");
 		m_Connecting = true;
 		m_SequenceId = 0;
-		return TaskManager::Get().Run([this, request, timeoutSeconds]()
+		return TaskManager::Get().Run([this, requestCopy{ request }, timeoutSeconds]() mutable
 			{
 				IncrementSequenceId();
 				ResetTimeSinceLastSentMessage();
-				auto message = CreateMessage(request);
+				auto message = CreateMessage(requestCopy);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<ServerConnectionResponse>(message, timeoutSeconds);
 				m_Connecting = false;
@@ -166,12 +181,12 @@ namespace Anarchy
 	ClientSocketApi::Promise<ServerDisconnectResponse> ClientListener::Disconnect(const ServerDisconnectRequest& request, double timeoutSeconds)
 	{
 		BLT_ASSERT(IsConnected() && !IsConnecting(), "Cannot disconnect now");
-		return TaskManager::Get().Run([this, request, timeoutSeconds]()
+		return TaskManager::Get().Run([this, requestCopy{ request }, timeoutSeconds]() mutable
 			{
 				m_Bus.Flush();
 				IncrementSequenceId();
 				ResetTimeSinceLastSentMessage();
-				auto message = CreateMessage(request);
+				auto message = CreateMessage(requestCopy);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<ServerDisconnectResponse>(message, timeoutSeconds);
 				if (response && response->Header.SequenceId == 0)
@@ -188,11 +203,11 @@ namespace Anarchy
 	ClientSocketApi::Promise<CreateCharacterResponse> ClientListener::CreateCharacter(const CreateCharacterRequest& request, double timeoutSeconds)
 	{
 		BLT_ASSERT(IsConnected(), "Must be connected");
-		return TaskManager::Get().Run([this, request, timeoutSeconds]()
+		return TaskManager::Get().Run([this, requestCopy{ request }, timeoutSeconds]() mutable
 			{
 				IncrementSequenceId();
 				ResetTimeSinceLastSentMessage();
-				auto message = CreateMessage(request);
+				auto message = CreateMessage(requestCopy);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<CreateCharacterResponse>(message, timeoutSeconds);
 				if (response)
@@ -208,11 +223,11 @@ namespace Anarchy
 	ClientSocketApi::Promise<GetEntitiesResponse> ClientListener::GetEntities(const GetEntitiesRequest& request, double timeoutSeconds)
 	{
 		BLT_ASSERT(IsConnected(), "Must be connected");
-		return TaskManager::Get().Run([this, request, timeoutSeconds]()
+		return TaskManager::Get().Run([this, requestCopy{ request }, timeoutSeconds]() mutable
 			{
 				IncrementSequenceId();
 				ResetTimeSinceLastSentMessage();
-				auto message = CreateMessage(request);
+				auto message = CreateMessage(requestCopy);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<GetEntitiesResponse>(message, timeoutSeconds);
 				if (response)
@@ -228,11 +243,11 @@ namespace Anarchy
 	ClientSocketApi::Promise<GetTilemapResponse> ClientListener::GetTilemap(const GetTilemapRequest& request, double timeoutSeconds)
 	{
 		BLT_ASSERT(IsConnected(), "Must be connected");
-		return TaskManager::Get().Run([this, request, timeoutSeconds]()
+		return TaskManager::Get().Run([this, requestCopy{ request }, timeoutSeconds]() mutable
 			{
 				IncrementSequenceId();
 				ResetTimeSinceLastSentMessage();
-				auto message = CreateMessage(request);
+				auto message = CreateMessage(requestCopy);
 				HandleOutgoingMessage(message);
 				auto response = AwaitResponse<GetTilemapResponse>(message, timeoutSeconds);
 				if (response)

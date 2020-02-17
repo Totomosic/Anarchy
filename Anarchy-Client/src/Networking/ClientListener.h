@@ -29,9 +29,12 @@ namespace Anarchy
 
 		seqid_t m_SequenceId;
 		seqid_t m_RemoteSequenceId;
+		reqid_t m_NextRequestId;
 
 		ScopedEventListener m_Listener;
 		std::unordered_map<MessageType, std::function<void(InputMemoryStream&)>> m_MessageHandlers;
+		std::mutex m_RequestMutex;
+		std::unordered_map<reqid_t, std::function<void(InputMemoryStream&)>> m_RequestHandlers;
 
 		double m_TimeSinceLastSentMessage;
 		double m_TimeSinceLastReceivedMessage;
@@ -189,27 +192,31 @@ namespace Anarchy
 		std::optional<NetworkMessage<TResponse>> AwaitResponse(const ServerNetworkMessage<TRequest>& request, double timeoutSeconds)
 		{
 			std::promise<std::optional<NetworkMessage<TResponse>>> promise;
-			ScopedEventListener listener = GetClientSocket().OnMessageReceived().AddScopedEventListener([&promise](Event<ServerMessageReceived>& e)
-				{
-					if (e.Data.Type == TResponse::Type)
-					{
-						std::optional<NetworkMessage<TResponse>> response;
-						Deserialize(e.Data.Data, response);
-						if (response.has_value())
-						{
-							promise.set_value(std::move(response));
-						}
-						else
-						{
-							promise.set_value({});
-						}
-					}
-				});
 			std::future<std::optional<NetworkMessage<TResponse>>> future = promise.get_future();
-			GetClientSocket().SendPacket(TRequest::Type, request);
+			RequestHeader header;
+			{
+				std::scoped_lock<std::mutex> lock(m_RequestMutex);
+				header.Id = m_NextRequestId++;
+				m_RequestHandlers[header.Id] = [&promise, request](InputMemoryStream& stream)
+				{
+					std::optional<NetworkMessage<TResponse>> response;
+					Deserialize(stream, response);
+					if (response.has_value())
+					{
+						promise.set_value(std::move(response));
+					}
+					else
+					{
+						promise.set_value({});
+					}
+				};
+				GetClientSocket().SendPacket(TRequest::Type, header, request);
+			}			
 			if (timeoutSeconds == IgnoreTimeout)
 			{
 				std::optional<NetworkMessage<TResponse>> value = future.get();
+				std::scoped_lock<std::mutex> lock(m_RequestMutex);
+				m_RequestHandlers.erase(header.Id);
 				if (value)
 				{
 					HandleIncomingMessage(value.value());
@@ -218,6 +225,8 @@ namespace Anarchy
 			}
 			BLT_ASSERT(timeoutSeconds > 0.0, "Invalid timeout");
 			std::future_status status = future.wait_for(std::chrono::nanoseconds((size_t)(timeoutSeconds * 1e9)));
+			std::scoped_lock<std::mutex> lock(m_RequestMutex);
+			m_RequestHandlers.erase(header.Id);
 			if (status == std::future_status::ready)
 			{
 				std::optional<NetworkMessage<TResponse>> value = future.get();

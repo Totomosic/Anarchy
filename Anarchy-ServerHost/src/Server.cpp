@@ -2,7 +2,7 @@
 #include "Server.h"
 
 #include "Lib/World/Reader/WorldReader.h"
-#include "Lib/Authentication.h"
+#include "Lib/RequestMessages.h"
 #include "Lib/GameMessages.h"
 #include "ServerState.h"
 

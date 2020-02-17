@@ -78,4 +78,11 @@ namespace Anarchy
 			});
 	}
 
+	void ClientSocket::HardResetStream(InputMemoryStream& stream) const
+	{
+		InputMemoryStream result(stream.GetRemainingDataSize());
+		memcpy(result.GetBufferPtr(), stream.GetBufferPtr(), stream.GetRemainingDataSize());
+		stream = std::move(result);
+	}
+
 }

@@ -38,7 +38,7 @@ namespace Anarchy
 		}
 		if (ClientState::Get().HasTilemap())
 		{
-			ClientState::Get().GetTilemapRenderer().Update();
+			ClientState::Get().GetTilemap().LoadTilePosition(0, 0);
 		}
 	}
 

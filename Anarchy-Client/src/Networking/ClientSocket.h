@@ -1,5 +1,5 @@
 #pragma once
-#include "Lib/Authentication.h"
+#include "Lib/RequestMessages.h"
 #include "Lib/Networking/ChunkSender.h"
 #include "Lib/Networking/ChunkReceiver.h"
 #include "Core/Events/EventEmitter.h"
@@ -40,17 +40,25 @@ namespace Anarchy
 
 		void Update(TimeDelta dt);
 
-		template<typename T>
-		void SendPacket(MessageType type, const T& data)
+		template<typename ...Args>
+		void SendPacket(MessageType type, Args&&... data)
 		{
 			OutputMemoryStream stream;
 			Serialize(stream, type);
-			Serialize(stream, data);
-			m_Socket.SendTo(m_Address, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+			(Serialize(stream, std::forward<Args>(data)), ...);
+			if (stream.GetRemainingDataSize() <= MaxPacketSize)
+			{
+				m_Socket.SendTo(m_Address, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+			}
+			else
+			{
+				m_ChunkSender.SendPacket(m_Address, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+			}
 		}
 
 	private:
 		void LaunchListenerThread();
+		void HardResetStream(InputMemoryStream& stream) const;
 
 	};
 

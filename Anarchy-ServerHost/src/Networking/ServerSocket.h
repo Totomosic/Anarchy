@@ -14,7 +14,7 @@ namespace Anarchy
 	{
 	public:
 		SocketAddress From;
-		MessageType Type;
+		MessageType Type = MessageType::None;
 		InputMemoryStream Data;
 	};
 
@@ -45,24 +45,34 @@ namespace Anarchy
 		void Run();
 		void Update(TimeDelta dt);
 
-		template<typename T>
-		void SendPacket(const std::vector<SocketAddress>& addresses, MessageType type, const T& data)
+		template<typename ...Args>
+		void SendPacket(const std::vector<SocketAddress>& addresses, MessageType type, Args&&... data)
 		{
 			OutputMemoryStream stream;
 			Serialize(stream, type);
-			Serialize(stream, data);
-			for (const SocketAddress& to : addresses)
+			(Serialize(stream, std::forward<Args>(data)), ...);
+			if (stream.GetRemainingDataSize() <= MaxPacketSize)
 			{
-				m_Socket.SendTo(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+				for (const SocketAddress& to : addresses)
+				{
+					m_Socket.SendTo(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+				}
+			}
+			else
+			{
+				for (const SocketAddress& to : addresses)
+				{
+					m_ChunkSender.SendPacket(to, stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+				}
 			}
 		}
 
-		template<typename T>
-		void SendPacket(const SocketAddress& to, MessageType type, const T& data)
+		template<typename ...Args>
+		void SendPacket(const SocketAddress& to, MessageType type, Args&&... data)
 		{
 			OutputMemoryStream stream;
 			Serialize(stream, type);
-			Serialize(stream, data);
+			(Serialize(stream, std::forward<Args>(data)), ...);
 			if (stream.GetRemainingDataSize() <= MaxPacketSize)
 			{
 				m_Socket.SendTo(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());

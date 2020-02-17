@@ -18,10 +18,4 @@ namespace Anarchy
 	ANCH_DEFINE_DEFAULT_SERIALIZE(TileType);
 	ANCH_DEFINE_DEFAULT_DESERIALIZE(TileType);
 
-	struct Tile
-	{
-	public:
-		TileType Type;
-	};
-
 }
