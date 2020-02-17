@@ -62,7 +62,7 @@ namespace Anarchy
 			{
 				for (const SocketAddress& to : addresses)
 				{
-					m_ChunkSender.SendPacket(to, stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+					m_ChunkSender.SendPacket(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
 				}
 			}
 		}
@@ -79,7 +79,7 @@ namespace Anarchy
 			}
 			else
 			{
-				m_ChunkSender.SendPacket(to, stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+				m_ChunkSender.SendPacket(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
 			}
 		}
 	};

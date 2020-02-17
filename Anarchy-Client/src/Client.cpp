@@ -28,12 +28,15 @@ namespace Anarchy
 
 	void Client::Update()
 	{
-		if (ClientState::Get().HasConnection() && ClientState::Get().GetConnection().IsConnected())
+		if (ClientState::Get().HasConnection())
 		{
 			ClientState::Get().GetConnection().Update(Time::Get().RenderingTimeline().DeltaTime());
-			if (Input::Get().KeyPressed(Keycode::Esc))
+			if (ClientState::Get().GetConnection().IsConnected())
 			{
-				Task t = ClientState::Get().GetConnection().GetSocketApi().Disconnect({}, 2.0);
+				if (Input::Get().KeyPressed(Keycode::Esc))
+				{
+					Task t = ClientState::Get().GetConnection().GetSocketApi().Disconnect({}, 2.0);
+				}
 			}
 		}
 		if (ClientState::Get().HasTilemap())

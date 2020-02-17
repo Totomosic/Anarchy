@@ -19,15 +19,14 @@ namespace Anarchy
 	{
 		TileIndex index = CalculateTileIndex(x, y);
 		std::vector<Vector2i> chunks;
-		chunks.push_back({ index.ChunkX - 1, index.ChunkY - 1 });
-		chunks.push_back({ index.ChunkX + 0, index.ChunkY - 1 });
-		chunks.push_back({ index.ChunkX + 1, index.ChunkY - 1 });
-		chunks.push_back({ index.ChunkX - 1, index.ChunkY + 0 });
-		chunks.push_back({ index.ChunkX + 0, index.ChunkY + 0 });
-		chunks.push_back({ index.ChunkX + 1, index.ChunkY + 0 });
-		chunks.push_back({ index.ChunkX - 1, index.ChunkY + 1 });
-		chunks.push_back({ index.ChunkX + 0, index.ChunkY + 1 });
-		chunks.push_back({ index.ChunkX + 1, index.ChunkY + 1 });
+		int radius = 1;
+		for (int i = -radius; i <= radius; i++)
+		{
+			for (int j = -radius; j <= radius; j++)
+			{
+				chunks.push_back({ index.ChunkX + i, index.ChunkY + j });
+			}
+		}
 		auto it = m_LoadedChunks.begin();
 		while (it != m_LoadedChunks.end())
 		{

@@ -36,8 +36,10 @@ namespace Anarchy
 					MessageCategory	category = GetMessageCategory(type);
 					if (category == MessageCategory::Response)
 					{
+						// All requests begin with a request header and all responses begin with a response header
 						ResponseHeader header;
 						Deserialize(e.Data.Data, header);
+						// Find a response handler that corresponds to the request id
 						auto it = m_RequestHandlers.find(header.RequestId);
 						if (it != m_RequestHandlers.end())
 						{
@@ -126,8 +128,8 @@ namespace Anarchy
 					ResetTimeSinceLastSentMessage();
 				}
 			}
-			GetClientSocket().Update(delta);
 		}
+		GetClientSocket().Update(delta);
 	}
 
 	void ClientListener::SendKeepAlive()

@@ -69,12 +69,18 @@ namespace Anarchy
 						{
 							OnMessageReceived().Emit(std::move(e));
 						}
+
+						if (e.Type == MessageType::DisconnectResponse || e.Type == MessageType::ForceDisconnect)
+						{
+							break;
+						}
 					}
 					else
 					{
 						break;
 					}
 				}
+				BLT_INFO("Stopped Listener Thread");
 			});
 	}
 

@@ -202,13 +202,9 @@ namespace Anarchy
 					std::optional<NetworkMessage<TResponse>> response;
 					Deserialize(stream, response);
 					if (response.has_value())
-					{
 						promise.set_value(std::move(response));
-					}
 					else
-					{
 						promise.set_value({});
-					}
 				};
 				GetClientSocket().SendPacket(TRequest::Type, header, request);
 			}			

@@ -32,18 +32,19 @@ namespace Anarchy
 			BLT_ASSERT(m_MessageHandlers.find(messageType) == m_MessageHandlers.end(), "Handler already exists for message type");
 			m_MessageHandlers[messageType] = [callback, this](const SocketAddress& address, InputMemoryStream& data)
 			{
+				// All requests begin with a request header
 				RequestHeader header;
 				ServerRequest<ServerNetworkMessage<TRequest>> srequest;
 				srequest.From = address;
 				Deserialize(data, header);
 				Deserialize(data, srequest.Request);
-				std::optional<TResponse> response = callback(srequest);
-				
+				std::optional<TResponse> response = callback(srequest);				
 				auto message = CreateOptionalMessage(srequest.Request.ConnectionId, response);
 				if (message)
 				{
 					HandleOutgoingMessage(GetConnection(srequest.Request.ConnectionId), message.value());
 				}
+				// All responses begin with a response header
 				ResponseHeader responseHeader;
 				responseHeader.RequestId = header.Id;
 				m_ServerSocket.SendPacket(address, TResponse::Type, responseHeader, message);
