@@ -34,7 +34,7 @@ namespace Anarchy
 		ScopedEventListener m_Listener;
 		std::unordered_map<MessageType, std::function<void(InputMemoryStream&)>> m_MessageHandlers;
 		std::mutex m_RequestMutex;
-		std::unordered_map<reqid_t, std::function<void(InputMemoryStream&)>> m_RequestHandlers;
+		std::unordered_map<reqid_t, std::function<void(InputMemoryStream*)>> m_RequestHandlers;
 
 		double m_TimeSinceLastSentMessage;
 		double m_TimeSinceLastReceivedMessage;
@@ -197,14 +197,21 @@ namespace Anarchy
 			{
 				std::scoped_lock<std::mutex> lock(m_RequestMutex);
 				header.Id = m_NextRequestId++;
-				m_RequestHandlers[header.Id] = [&promise, request](InputMemoryStream& stream)
+				m_RequestHandlers[header.Id] = [&promise, request](InputMemoryStream* stream)
 				{
-					std::optional<NetworkMessage<TResponse>> response;
-					Deserialize(stream, response);
-					if (response.has_value())
-						promise.set_value(std::move(response));
+					if (stream != nullptr)
+					{
+						std::optional<NetworkMessage<TResponse>> response;
+						Deserialize(*stream, response);
+						if (response.has_value())
+							promise.set_value(std::move(response));
+						else
+							promise.set_value({});
+					}
 					else
+					{
 						promise.set_value({});
+					}
 				};
 				GetClientSocket().SendPacket(TRequest::Type, header, request);
 			}			

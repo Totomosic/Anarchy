@@ -19,7 +19,7 @@ namespace Anarchy
 	{
 		TileIndex index = CalculateTileIndex(x, y);
 		std::vector<Vector2i> chunks;
-		int radius = 1;
+		int radius = 2;
 		for (int i = -radius; i <= radius; i++)
 		{
 			for (int j = -radius; j <= radius; j++)

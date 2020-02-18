@@ -26,13 +26,15 @@ namespace Anarchy
 		EventBus m_Bus;
 		EventEmitter<ServerMessageReceived> m_OnMessage;
 
+		std::atomic<bool> m_ShutdownListener;
+
 	public:
 		ClientSocket(const SocketAddress& address);
 		ClientSocket(const ClientSocket& other) = delete;
 		ClientSocket& operator=(const ClientSocket& other) = delete;
 		ClientSocket(ClientSocket&& other) = delete;
 		ClientSocket& operator=(ClientSocket&& other) = delete;
-		~ClientSocket() = default;
+		~ClientSocket();
 
 		const SocketAddress& GetAddress() const;
 		const UDPsocket& GetSocket() const;

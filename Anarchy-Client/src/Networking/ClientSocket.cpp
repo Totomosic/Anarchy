@@ -8,11 +8,19 @@ namespace Anarchy
 {
 
 	ClientSocket::ClientSocket(const SocketAddress& address)
-		: m_Address(address), m_Socket(), m_ChunkSender(&m_Socket), m_ChunkReceiver(&m_Socket), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>(ServerEvents::ServerMessageReceived))
+		: m_Address(address), m_Socket(), m_ChunkSender(&m_Socket), m_ChunkReceiver(&m_Socket), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>(ServerEvents::ServerMessageReceived)), m_ShutdownListener(false)
 	{
 		m_Bus.SetImmediateMode(true);
 		m_Socket.Connect(m_Address);
+		m_Socket.SetBlocking(false);
 		LaunchListenerThread();
+	}
+
+	ClientSocket::~ClientSocket()
+	{
+		m_ShutdownListener = true;
+		while (m_ShutdownListener) {}
+		m_Bus.Flush();
 	}
 
 	const SocketAddress& ClientSocket::GetAddress() const
@@ -40,47 +48,47 @@ namespace Anarchy
 		Task task = TaskManager::Get().Run([this]()
 			{
 				std::byte buffer[MaxPacketSize];
-				while (true)
+				while (!m_ShutdownListener)
 				{
-					SocketAddress from;
-					int received = m_Socket.RecvFrom(buffer, sizeof(buffer), &from);
-					if (received > 0)
+					UDPsocket* socket = SocketUtil::SelectRead(&m_Socket, 200);
+					if (socket != nullptr)
 					{
-						InputMemoryStream stream(received);
-						memcpy(stream.GetBufferPtr(), buffer, received);
-						ServerMessageReceived e;
-						Deserialize(stream, e.Type);
-						e.Data = std::move(stream);
-						if (e.Type == MessageType::ChunkSlice)
+						SocketAddress from;
+						int received = socket->RecvFrom(buffer, sizeof(buffer), &from);
+						if (received > 0)
 						{
-							std::optional<InputMemoryStream> result = m_ChunkReceiver.HandleSlicePacket(from, e.Data);
-							if (result)
+							InputMemoryStream stream(received);
+							memcpy(stream.GetBufferPtr(), buffer, received);
+							ServerMessageReceived e;
+							Deserialize(stream, e.Type);
+							e.Data = std::move(stream);
+							if (e.Type == MessageType::ChunkSlice)
 							{
-								Deserialize(*result, e.Type);
-								e.Data = std::move(*result);
+								std::optional<InputMemoryStream> result = m_ChunkReceiver.HandleSlicePacket(from, e.Data);
+								if (result)
+								{
+									Deserialize(*result, e.Type);
+									e.Data = std::move(*result);
+									OnMessageReceived().Emit(std::move(e));
+								}
+							}
+							else if (e.Type == MessageType::ChunkAck)
+							{
+								m_ChunkSender.HandleAckPacket(e.Data);
+							}
+							else
+							{
 								OnMessageReceived().Emit(std::move(e));
 							}
 						}
-						else if (e.Type == MessageType::ChunkAck)
-						{
-							m_ChunkSender.HandleAckPacket(e.Data);
-						}
 						else
-						{
-							OnMessageReceived().Emit(std::move(e));
-						}
-
-						if (e.Type == MessageType::DisconnectResponse || e.Type == MessageType::ForceDisconnect)
 						{
 							break;
 						}
 					}
-					else
-					{
-						break;
-					}
 				}
 				BLT_INFO("Stopped Listener Thread");
+				m_ShutdownListener = false;
 			});
 	}
 

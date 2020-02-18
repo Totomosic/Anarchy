@@ -35,7 +35,10 @@ namespace Anarchy
 			{
 				if (Input::Get().KeyPressed(Keycode::Esc))
 				{
-					Task t = ClientState::Get().GetConnection().GetSocketApi().Disconnect({}, 2.0);
+					ClientState::Get().GetConnection().GetSocketApi().Disconnect({}, 2.0).ContinueWithOnMainThread([](std::optional<ServerDisconnectResponse> response)
+						{
+							ClientState::Get().CloseConnection();
+						});
 				}
 			}
 		}

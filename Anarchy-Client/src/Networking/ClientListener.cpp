@@ -43,7 +43,7 @@ namespace Anarchy
 						auto it = m_RequestHandlers.find(header.RequestId);
 						if (it != m_RequestHandlers.end())
 						{
-							it->second(e.Data.Data);
+							it->second(&e.Data.Data);
 						}
 					}
 				}
@@ -53,6 +53,24 @@ namespace Anarchy
 	ClientListener::~ClientListener()
 	{
 		m_Bus.Flush();
+		{
+			// Send nullptr so that pending requests fail
+			std::scoped_lock<std::mutex> lock(m_RequestMutex);
+			for (auto& pair : m_RequestHandlers)
+			{
+				pair.second(nullptr);
+			}
+		}
+		// Wait for all pending requests to complete
+		while (true)
+		{
+			std::scoped_lock<std::mutex> lock(m_RequestMutex);
+			if (m_RequestHandlers.empty())
+			{
+				break;
+			}
+			std::this_thread::yield();
+		}
 	}
 
 	const ClientSocket& ClientListener::GetClientSocket() const
