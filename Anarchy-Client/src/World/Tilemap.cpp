@@ -6,8 +6,33 @@ namespace Anarchy
 {
 
 	TileChunk::TileChunk(int x, int y, int width, int height, std::vector<TileType>&& tiles)
-		: m_ChunkX(x), m_ChunkY(y), m_WidthTiles(width), m_HeightTiles(height), m_Tiles(std::move(tiles))
+		: m_TileX(x), m_TileY(y), m_WidthTiles(width), m_HeightTiles(height), m_Tiles(std::move(tiles))
 	{
+	}
+
+	int TileChunk::GetX() const
+	{
+		return m_TileX;
+	}
+
+	int TileChunk::GetY() const
+	{
+		return m_TileY;
+	}
+
+	int TileChunk::GetWidth() const
+	{
+		return m_WidthTiles;
+	}
+
+	int TileChunk::GetHeight() const
+	{
+		return m_HeightTiles;
+	}
+
+	const TileType* TileChunk::GetTiles() const
+	{
+		return m_Tiles.data();
 	}
 
 	Tilemap::Tilemap(Layer* layer, int tileWidth, int tileHeight)
@@ -15,11 +40,11 @@ namespace Anarchy
 	{
 	}
 
-	void Tilemap::LoadTilePosition(int64_t x, int64_t y)
+	void Tilemap::LoadTilePosition(int x, int y)
 	{
 		TileIndex index = CalculateTileIndex(x, y);
 		std::vector<Vector2i> chunks;
-		int radius = 2;
+		int radius = 1;
 		for (int i = -radius; i <= radius; i++)
 		{
 			for (int j = -radius; j <= radius; j++)
@@ -32,6 +57,7 @@ namespace Anarchy
 		{
 			if (std::find(chunks.begin(), chunks.end(), it->first) == chunks.end())
 			{
+				UnloadChunk(it->first.x, it->first.y);
 				it = m_LoadedChunks.erase(it);
 			}
 			else
@@ -46,13 +72,17 @@ namespace Anarchy
 				m_LoadedChunks[chunk] = nullptr;
 				LoadChunk(chunk.x, chunk.y).ContinueWithOnMainThread([this, chunk](std::unique_ptr<TileChunk> result)
 					{
-						m_LoadedChunks[chunk] = std::move(result);
+						if (result)
+						{
+							m_Renderer.DrawChunk(chunk, result.get());
+							m_LoadedChunks[chunk] = std::move(result);
+						}
 					});
 			}
 		}
 	}
 
-	Tilemap::TileIndex Tilemap::CalculateTileIndex(int64_t tileX, int64_t tileY) const
+	Tilemap::TileIndex Tilemap::CalculateTileIndex(int tileX, int tileY) const
 	{
 		TileIndex index;
 		index.ChunkX = tileX / m_ChunkWidthTiles;
@@ -93,6 +123,7 @@ namespace Anarchy
 
 	void Tilemap::UnloadChunk(int chunkX, int chunkY)
 	{
+		m_Renderer.DestroyChunk({ chunkX, chunkY });
 	}
 
 }

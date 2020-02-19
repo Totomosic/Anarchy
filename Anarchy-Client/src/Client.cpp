@@ -24,6 +24,7 @@ namespace Anarchy
 
 	void Client::Tick()
 	{
+		
 	}
 
 	void Client::Update()
@@ -42,9 +43,14 @@ namespace Anarchy
 				}
 			}
 		}
-		if (ClientState::Get().HasTilemap())
+		if (ClientState::Get().HasTilemap() && ClientState::Get().HasEntities())
 		{
-			ClientState::Get().GetTilemap().LoadTilePosition(0, 0);
+			EntityHandle camera = ClientState::Get().GetEntities().GetCamera();
+			if (camera)
+			{
+				ComponentHandle transform = camera.GetTransform();
+				ClientState::Get().GetTilemap().LoadTilePosition((int64_t)transform->Position().x, (int64_t)transform->Position().y);
+			}
 		}
 	}
 

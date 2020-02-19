@@ -69,6 +69,7 @@ namespace Anarchy
 							else
 							{
 								BLT_WARN("Connection Failed");
+								ClientState::Get().CloseConnection();
 							}
 						});
 				}
@@ -87,7 +88,7 @@ namespace Anarchy
 				{
 					int width = 50;
 					int height = 50;
-					EntityHandle camera = scene.GetFactory().Camera(Matrix4f::Orthographic(-16, 16, -9, 9, -100, 100));
+					EntityHandle camera = scene.GetFactory().Camera(Matrix4f::Orthographic(-32, 32, -18, 18, -100, 100));
 					Layer& mapLayer = scene.AddLayer();
 					Layer& gameLayer = scene.AddLayer();
 					mapLayer.SetActiveCamera(camera);

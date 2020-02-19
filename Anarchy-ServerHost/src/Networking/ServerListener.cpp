@@ -146,7 +146,7 @@ namespace Anarchy
 			response.Data.Level = 1;
 			response.Data.PrefabId = 0;
 			response.Data.DimensionId = 0;
-			response.Data.TilePosition = { Random::NextInt(0, 32), Random::NextInt(0, 18) };
+			response.Data.TilePosition = { 300, 300 };
 
 			SpawnEntitiesRequest spawnRequest;
 			spawnRequest.Entities.push_back(response.Data);
@@ -208,6 +208,10 @@ namespace Anarchy
 				x = 0;
 			if (y < 0)
 				y = 0;
+			if (x >= world.GetWidthInTiles())
+				x = world.GetWidthInTiles() - 2;
+			if (y >= world.GetHeightInTiles())
+				y = world.GetHeightInTiles() - 2;
 			if (x + width >= world.GetWidthInTiles())
 				width = world.GetWidthInTiles() - x - 1;
 			if (y + height >= world.GetHeightInTiles())

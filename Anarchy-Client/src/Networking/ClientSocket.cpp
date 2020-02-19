@@ -81,10 +81,6 @@ namespace Anarchy
 								OnMessageReceived().Emit(std::move(e));
 							}
 						}
-						else
-						{
-							break;
-						}
 					}
 				}
 				BLT_INFO("Stopped Listener Thread");

@@ -51,7 +51,7 @@ namespace Anarchy
 					entity.Assign<Transform>();
 					Mesh mesh;
 					mesh.Models.push_back({ ResourceManager::Get().Models().Square() });
-					mesh.Materials.push_back(ResourceManager::Get().Materials().Default(Color::White));
+					mesh.Materials.push_back(ResourceManager::Get().Materials().Default(Color::Red));
 					entity.Assign<Mesh>(std::move(mesh));
 				}
 				return entity;
