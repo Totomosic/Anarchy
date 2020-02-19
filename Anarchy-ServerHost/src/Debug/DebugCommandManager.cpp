@@ -89,6 +89,7 @@ namespace Anarchy
 				LogMessage("/status [ConnectionId]");
 				LogMessage("/list");
 				LogMessage("/disconnect ConnectionId");
+				LogMessage("/throttle [BytesPerSecond]");
 			});
 
 		m_Registry.Register("status", [this](const RunDebugCommand& command)
@@ -160,6 +161,39 @@ namespace Anarchy
 				{
 					BLT_ERROR("Invalid ConnectionId argument");
 				}				
+			});
+
+		m_Registry.Register("throttle", [this](const RunDebugCommand& command)
+			{
+				if (command.Args.size() == 1)
+				{
+					try
+					{
+						int64_t bytesPerSecond = std::stoi(command.Args[0]);
+						if (bytesPerSecond < 0)
+						{
+							BLT_ERROR("Invalid BytesPerSecond argument");
+						}
+						else
+						{
+							ServerState::Get().GetSocket().SetMaxBytesPerSecond(bytesPerSecond);
+							LogMessage("Set chunk sender to maximum of " + std::to_string(bytesPerSecond) + " bytes per second");
+						}
+					}
+					catch (std::invalid_argument e)
+					{
+						BLT_ERROR("Invalid BytesPerSecond argument");
+					}
+				}
+				else if (command.Args.size() == 0)
+				{
+					ServerState::Get().GetSocket().SetMaxBytesPerSecond(1024 * 1024 * 1);
+					LogMessage("Removed server throttling");
+				}
+				else
+				{
+					BLT_ERROR("Invalid args for /throttle");
+				}
 			});
 	}
 

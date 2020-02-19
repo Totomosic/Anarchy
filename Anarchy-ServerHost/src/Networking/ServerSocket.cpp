@@ -21,6 +21,11 @@ namespace Anarchy
 		return m_Socket;
 	}
 
+	void ServerSocket::SetMaxBytesPerSecond(size_t bytesPerSecond)
+	{
+		m_ChunkSender.SetMaxBytesPerSecond(bytesPerSecond);
+	}
+
 	EventEmitter<ClientMessageReceived>& ServerSocket::OnMessageReceived()
 	{
 		return m_OnMessage;

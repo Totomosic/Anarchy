@@ -36,7 +36,7 @@ namespace Anarchy
 	}
 
 	Tilemap::Tilemap(Layer* layer, int tileWidth, int tileHeight)
-		: m_LoadedChunks(), m_ChunkWidthTiles(32), m_ChunkHeightTiles(32), m_Renderer(layer, tileWidth, tileHeight)
+		: m_CachedChunks(), m_LoadedChunks(), m_ChunkWidthTiles(16), m_ChunkHeightTiles(16), m_Renderer(layer, tileWidth, tileHeight)
 	{
 	}
 
@@ -46,38 +46,47 @@ namespace Anarchy
 		std::vector<Vector2i> chunks;
 		int radius = 1;
 		for (int i = -radius; i <= radius; i++)
-		{
 			for (int j = -radius; j <= radius; j++)
-			{
 				chunks.push_back({ index.ChunkX + i, index.ChunkY + j });
-			}
-		}
-		auto it = m_LoadedChunks.begin();
-		while (it != m_LoadedChunks.end())
+
+		for (int i = m_LoadedChunks.size() - 1; i >= 0; i--)
 		{
-			if (std::find(chunks.begin(), chunks.end(), it->first) == chunks.end())
+			const Vector2i& chunk = m_LoadedChunks[i];
+			if (std::find(chunks.begin(), chunks.end(), chunk) == chunks.end())
 			{
-				UnloadChunk(it->first.x, it->first.y);
-				it = m_LoadedChunks.erase(it);
-			}
-			else
-			{
-				it++;
+				UnloadChunk(chunk.x, chunk.y);
+				m_LoadedChunks.erase(m_LoadedChunks.begin() + i);
 			}
 		}
 		for (const Vector2i& chunk : chunks)
 		{
-			if (m_LoadedChunks.find(chunk) == m_LoadedChunks.end())
+			if (std::find(m_LoadedChunks.begin(), m_LoadedChunks.end(), chunk) == m_LoadedChunks.end())
 			{
-				m_LoadedChunks[chunk] = nullptr;
-				LoadChunk(chunk.x, chunk.y).ContinueWithOnMainThread([this, chunk](std::unique_ptr<TileChunk> result)
+				m_LoadedChunks.push_back(chunk);
+				if (m_CachedChunks.find(chunk) != m_CachedChunks.end())
+				{
+					const auto& c = m_CachedChunks[chunk];
+					if (c != nullptr)
 					{
-						if (result)
+						m_Renderer.DrawChunk(chunk, c.get());
+					}
+				}
+				else
+				{
+					m_CachedChunks[chunk] = nullptr;
+					LoadChunk(chunk.x, chunk.y).ContinueWithOnMainThread([chunk, this](std::unique_ptr<TileChunk> c)
 						{
-							m_Renderer.DrawChunk(chunk, result.get());
-							m_LoadedChunks[chunk] = std::move(result);
-						}
-					});
+							if (c != nullptr)
+							{
+								m_Renderer.DrawChunk(chunk, c.get());
+								m_CachedChunks[chunk] = std::move(c);
+							}
+							else
+							{
+								m_CachedChunks.erase(chunk);
+							}
+						});
+				}
 			}
 		}
 	}

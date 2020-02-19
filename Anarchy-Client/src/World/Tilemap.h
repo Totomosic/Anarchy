@@ -45,7 +45,8 @@ namespace Anarchy
 		};
 
 	private:
-		std::unordered_map<Vector2i, std::unique_ptr<TileChunk>> m_LoadedChunks;
+		std::unordered_map<Vector2i, std::unique_ptr<TileChunk>> m_CachedChunks;
+		std::vector<Vector2i> m_LoadedChunks;
 		int m_ChunkWidthTiles;
 		int m_ChunkHeightTiles;
 		TilemapRenderer m_Renderer;

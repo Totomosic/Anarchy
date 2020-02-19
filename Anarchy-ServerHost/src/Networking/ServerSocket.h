@@ -39,6 +39,7 @@ namespace Anarchy
 
 		const SocketAddress& GetAddress() const;
 		const UDPsocket& GetSocket() const;
+		void SetMaxBytesPerSecond(size_t bytesPerSecond);
 
 		EventEmitter<ClientMessageReceived>& OnMessageReceived();
 

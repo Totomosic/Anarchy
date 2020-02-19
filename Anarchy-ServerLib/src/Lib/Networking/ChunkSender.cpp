@@ -23,6 +23,8 @@ namespace Anarchy
 	void ChunkSender::SetMaxBytesPerSecond(size_t bytesPerSecond)
 	{
 		m_MaxBytesPerSecond = bytesPerSecond;
+		m_BytesSent = 0;
+		m_StartTime = std::chrono::high_resolution_clock::now();
 	}
 
 	void ChunkSender::SendPacket(const SocketAddress& to, const void* data, uint32_t size, size_t millisecondsForResend)
