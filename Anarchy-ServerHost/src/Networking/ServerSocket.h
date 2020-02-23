@@ -21,6 +21,15 @@ namespace Anarchy
 	class ServerSocket
 	{
 	private:
+		struct Packet
+		{
+		public:
+			SocketAddress Address;
+			std::shared_ptr<void> Data;
+			size_t Size;
+		};
+
+	private:
 		SocketAddress m_Address;
 		UDPsocket m_Socket;
 		ChunkSender m_ChunkSender;
@@ -28,6 +37,11 @@ namespace Anarchy
 
 		EventBus m_Bus;
 		EventEmitter<ClientMessageReceived> m_OnMessage;
+
+		std::deque<Packet> m_Packets;
+		size_t m_MaxBytesPerSecond;
+		size_t m_MaxBytes;
+		size_t m_SentBytes;
 
 	public:
 		ServerSocket(const SocketAddress& address);
@@ -52,11 +66,17 @@ namespace Anarchy
 			OutputMemoryStream stream;
 			Serialize(stream, type);
 			(Serialize(stream, std::forward<Args>(data)), ...);
-			if (stream.GetRemainingDataSize() <= MaxPacketSize)
+			if (stream.GetRemainingDataSize() <= MaxPacketSize || type == MessageType::ChunkAck || type == MessageType::ChunkSlice)
 			{
+				std::shared_ptr<void> data = std::shared_ptr<void>(new uint8_t[stream.GetRemainingDataSize()]);
+				memcpy(data.get(), stream.GetBufferPtr(), stream.GetRemainingDataSize());
 				for (const SocketAddress& to : addresses)
 				{
-					m_Socket.SendTo(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+					Packet packet;
+					packet.Address = to;
+					packet.Data = data;
+					packet.Size = stream.GetRemainingDataSize();
+					HandlePacket(packet);
 				}
 			}
 			else
@@ -74,15 +94,25 @@ namespace Anarchy
 			OutputMemoryStream stream;
 			Serialize(stream, type);
 			(Serialize(stream, std::forward<Args>(data)), ...);
-			if (stream.GetRemainingDataSize() <= MaxPacketSize)
+			if (stream.GetRemainingDataSize() <= MaxPacketSize || type == MessageType::ChunkAck || type == MessageType::ChunkSlice)
 			{
-				m_Socket.SendTo(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
+				Packet packet;
+				packet.Address = to;
+				packet.Data = std::shared_ptr<void>(new uint8_t[stream.GetRemainingDataSize()]);
+				packet.Size = stream.GetRemainingDataSize();
+				memcpy(packet.Data.get(), stream.GetBufferPtr(), packet.Size);
+				HandlePacket(packet);
 			}
 			else
 			{
 				m_ChunkSender.SendPacket(to, (const void*)stream.GetBufferPtr(), (uint32_t)stream.GetRemainingDataSize());
 			}
 		}
+
+	private:
+		void HandlePacket(const Packet& packet);
+		void SendPacket(const Packet& packet);
+
 	};
 
 }

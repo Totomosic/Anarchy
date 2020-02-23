@@ -177,7 +177,7 @@ namespace Anarchy
 						else
 						{
 							ServerState::Get().GetSocket().SetMaxBytesPerSecond(bytesPerSecond);
-							LogMessage("Set chunk sender to maximum of " + std::to_string(bytesPerSecond) + " bytes per second");
+							LogMessage("Set server to maximum of " + std::to_string(bytesPerSecond) + " bytes per second");
 						}
 					}
 					catch (std::invalid_argument e)
