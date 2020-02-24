@@ -10,6 +10,8 @@
 namespace Anarchy
 {
 
+	extern Bolt::DirectoryPath WorldDirectory;
+
 	class ServerState
 	{
 	private:

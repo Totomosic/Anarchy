@@ -7,6 +7,7 @@ namespace Anarchy
 {
 
 	SocketAddress ServerAddress;
+	Bolt::DirectoryPath WorldDirectory;
 
 	void Run(int argc, const char** argv)
 	{
@@ -23,6 +24,10 @@ namespace Anarchy
 		parser.add_argument()
 			.names({ "-p", "--port" })
 			.description("Port to bind to")
+			.required(true);
+		parser.add_argument()
+			.names({ "-w", "--world" })
+			.description("Path to the directory containing the world")
 			.required(true);
 		parser.enable_help();
 		auto error = parser.parse(argc, argv);
@@ -41,6 +46,7 @@ namespace Anarchy
 		int port = parser.get<int>("port");
 
 		ServerAddress = SocketAddress(address, port);
+		WorldDirectory = Bolt::DirectoryPath(parser.get<std::string>("world"));
 
 		e.SetApplication<Server>();
 		e.Run();

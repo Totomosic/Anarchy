@@ -5,8 +5,9 @@ namespace Anarchy
 {
 
 	ServerState::ServerState()
-		: m_Socket(), m_Connections(), m_Entities(), m_DebugCommands(), m_WorldReader("World")
+		: m_Socket(), m_Connections(), m_Entities(), m_DebugCommands(), m_WorldReader(WorldDirectory)
 	{
+		BLT_INFO("Loading world from {}", WorldDirectory);
 	}
 
 	ServerState& ServerState::Get()
