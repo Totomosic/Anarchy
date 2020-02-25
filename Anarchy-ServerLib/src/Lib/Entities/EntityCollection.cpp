@@ -3,6 +3,8 @@
 #include "Components/PrefabId.h"
 #include "Components/DimensionId.h"
 #include "Components/TilePosition.h"
+#include "Components/EntityName.h"
+#include "Components/Health.h"
 
 namespace Anarchy
 {
@@ -89,6 +91,15 @@ namespace Anarchy
 		{
 			entity.GetTransform()->SetLocalPosition(data.TilePosition.x, data.TilePosition.y, 0.0f);
 		}
+		if (!data.Name.empty())
+		{
+			entity.Assign<CEntityName>(CEntityName{ data.Name });
+		}
+		CLifeForce lf;
+		lf.CurrentHealth = data.CurrentHealth;
+		lf.MaxHealth = data.MaxHealth;
+		lf.Shield = data.Shield;
+		entity.Assign<CLifeForce>(lf);
 		return entity;
 	}
 
@@ -97,7 +108,6 @@ namespace Anarchy
 		if (m_EntityMap.find(networkId) != m_EntityMap.end())
 		{
 			m_EntityMap[networkId].Destroy();
-			m_EntityMap.erase(networkId);
 		}
 	}
 
@@ -116,6 +126,14 @@ namespace Anarchy
 		data.HeightLevel = 0;
 		data.Level = 1;
 		data.TilePosition = GetEntityTilePosition(entity);
+		if (entity.HasComponent<CEntityName>())
+		{
+			data.Name = entity.GetComponent<CEntityName>()->Name;
+		}
+		ComponentHandle lifeforce = entity.GetComponent<CLifeForce>();
+		data.MaxHealth = lifeforce->MaxHealth;
+		data.CurrentHealth = lifeforce->CurrentHealth;
+		data.Shield = lifeforce->Shield;
 		return data;
 	}
 

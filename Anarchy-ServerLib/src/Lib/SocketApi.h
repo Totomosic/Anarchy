@@ -2,6 +2,7 @@
 #include "RequestMessages.h"
 #include "GameMessages.h"
 #include "Entities/EntityActions.h"
+#include "Entities/EntityMessages.h"
 #include "Core/Tasks/Task.h"
 
 namespace Anarchy
@@ -34,6 +35,9 @@ namespace Anarchy
 		virtual void UpdateEntities(const std::vector<connid_t>& connections, const UpdateEntitiesRequest& request) = 0;
 
 		virtual void OnAction(const ServerNetworkMessage<GenericAction>& command) = 0;
+
+		virtual void EntityDied(const std::vector<connid_t>& connections, const MEntityDied& message) = 0;
+		virtual void EntityDamaged(const std::vector<connid_t>& connections, const MEntityDamaged& message) = 0;
 	};
 
 	class ClientSocketApi
@@ -58,6 +62,9 @@ namespace Anarchy
 		virtual void UpdateEntities(const NetworkMessage<UpdateEntitiesRequest>& request) = 0;
 
 		virtual void SendAction(const GenericAction& command) = 0;
+
+		virtual void OnEntityDied(const NetworkMessage<MEntityDied>& message) = 0;
+		virtual void OnEntityDamaged(const NetworkMessage<MEntityDamaged>& message) = 0;
 	};
 
 }

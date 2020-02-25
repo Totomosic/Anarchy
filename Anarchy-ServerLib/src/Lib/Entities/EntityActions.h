@@ -17,7 +17,7 @@ namespace Anarchy
 	public:
 		static constexpr MessageType Type = MessageType::InputCommand;
 	public:
-		Anarchy::ActionType Action;
+		ActionType Action;
 		std::shared_ptr<OutputMemoryStream> ActionData;
 	};
 

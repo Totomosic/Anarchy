@@ -4,6 +4,8 @@
 namespace Anarchy
 {
 
+	extern Bolt::DirectoryPath WorldDirectory;
+
 	ServerState::ServerState()
 		: m_Socket(), m_Connections(), m_Entities(), m_DebugCommands(), m_WorldReader(WorldDirectory)
 	{

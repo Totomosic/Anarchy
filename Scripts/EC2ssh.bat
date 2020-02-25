@@ -1,1 +1,1 @@
-bash -c "ssh -i /.ssh/JordanSydney.pem ubuntu@52.64.129.71"
+bash -c "ssh -i /.ssh/JordanSydney.pem ubuntu@3.106.166.174"

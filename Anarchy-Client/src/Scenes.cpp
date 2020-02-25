@@ -28,18 +28,21 @@ namespace Anarchy
 		UIRectangle& background = ui.CreateRectangle(500, 600, Color::White, Transform({ window.Width() / 2.0f, window.Height() / 2.0f, 0 }));
 		background.CreateText("Anarchy", titleFont, Color::Black, Transform({ 0, 125, 1 }));
 
-		UITextInput& serverInput = background.CreateTextInput(300, 50, displayFont, Color::Black, Color(128, 128, 128), Transform({ 0, 0, 1 }));
+		UITextInput& usernameInput = background.CreateTextInput(300, 50, displayFont, Color::Black, Color(128, 128, 128), Transform({ 0, 0, 1 }));
+		usernameInput.CreateText("Username:", displayFont, Color::Black, Transform({ -150, 30, 1 }), AlignH::Left, AlignV::Bottom);
+
+		UITextInput& serverInput = usernameInput.CreateTextInput(300, 50, displayFont, Color::Black, Color(128, 128, 128), Transform({ 0, -75, 0 }));
 		serverInput.CreateText("Server:", displayFont, Color::Black, Transform({ -150, 30, 1 }), AlignH::Left, AlignV::Bottom);
 		serverInput.SetText("localhost:10000");
 
-		UIRectangle& connectButton = background.CreateRectangle(300, 50, Color(50, 200, 50), Transform({ 0, -60, 1 }));
+		UIRectangle& connectButton = serverInput.CreateRectangle(300, 50, Color(50, 200, 50), Transform({ 0, -60, 0 }));
 		connectButton.CreateText("Connect", displayFont, Color::Black, Transform({ 0, 0, 1 }));
-		connectButton.Events().OnClick().AddEventListener([&background, &serverInput, &gameScene, &scene](Event<UI<MouseClickEvent>>& e)
+		connectButton.Events().OnClick().AddEventListener([&background, &serverInput, &usernameInput, &gameScene, &scene](Event<UI<MouseClickEvent>>& e)
 			{
 				if (!ClientState::Get().HasConnection() || (!ClientState::Get().GetConnection().IsConnected() && !ClientState::Get().GetConnection().IsConnecting()))
 				{
 					ConnectToServerEvent data;
-					data.Username = "Totomosic";
+					data.Username = usernameInput.GetText();
 					data.Server = serverInput.GetText();
 
 					size_t colon = data.Server.rfind(':');
@@ -59,12 +62,12 @@ namespace Anarchy
 					UIRectangle& connectingIcon = background.CreateRectangle(30, 30, Color::Red, Transform({ 170, -60, 1 }));
 
 					Task<std::optional<ServerConnectionResponse>> response = ClientState::Get().GetConnection().GetSocketApi().Connect(request, 2.0);
-					response.ContinueWithOnMainThread([&gameScene, &connectingIcon](std::optional<ServerConnectionResponse> response)
+					response.ContinueWithOnMainThread([&gameScene, &connectingIcon, username{ data.Username }](std::optional<ServerConnectionResponse> response)
 						{
 							connectingIcon.Remove();
 							if (response)
 							{
-								SceneManager::Get().SetCurrentScene(gameScene);
+								SceneManager::Get().SetCurrentScene(gameScene, username);
 							}
 							else
 							{
@@ -74,8 +77,6 @@ namespace Anarchy
 						});
 				}
 			});
-
-		background.CreateText("Connecting As: Totomosic", displayFont, Color::Black, Transform({ 0, -100, 1 }));
 	}
 
 	void CreateGameScene(Scene& scene, const Window& window)
@@ -83,12 +84,13 @@ namespace Anarchy
 		scene.OnLoad().AddEventListener([&scene](Event<SceneLoadEvent>& e)
 			{
 				CreateCharacterRequest request;
+				request.Name = std::any_cast<std::string>(e.Data.Data);
 				std::optional<CreateCharacterResponse> character = ClientState::Get().GetConnection().GetSocketApi().CreateCharacter(request, 5.0).Result();
 				if (character)
 				{
 					int width = 50;
 					int height = 50;
-					EntityHandle camera = scene.GetFactory().Camera(Matrix4f::Orthographic(-32, 32, -18, 18, -100, 100));
+					EntityHandle camera = scene.GetFactory().Camera(Matrix4f::Orthographic(-16, 16, -9, 9, -100, 100));
 					Layer& mapLayer = scene.AddLayer();
 					Layer& gameLayer = scene.AddLayer();
 					mapLayer.SetActiveCamera(camera);
@@ -109,11 +111,11 @@ namespace Anarchy
 					auto controlSystem = gameLayer.Systems().Add<PlayerControlSystem>(&commands);
 
 					entities.SetCamera(camera);
-					entities.SetOwnedEntity(character->Data.NetworkId);
+					entities.SetControlledEntity(character->Data.NetworkId);
 
 					commands.RegisterHandler<TileMovement>(ActionType::EntityMove, [&entities](const InputAction<TileMovement>& action, bool fromNetwork)
 						{
-							if (!fromNetwork || !entities.OwnsEntity(action.NetworkId))
+							if (!fromNetwork || !entities.IsControllingEntity(action.NetworkId))
 							{
 								EntityHandle entity = entities.GetEntityByNetworkId(action.NetworkId);
 								if (entity && entity.HasComponent<CTilePosition>())

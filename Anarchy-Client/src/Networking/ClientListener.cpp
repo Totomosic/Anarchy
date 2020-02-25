@@ -22,6 +22,9 @@ namespace Anarchy
 
 		Register<ForceDisconnectMessage>(ANCH_BIND_LISTENER_FN(ClientListener::OnForceDisconnect));
 
+		Register<MEntityDied>(ANCH_BIND_LISTENER_FN(ClientListener::OnEntityDied));
+		Register<MEntityDamaged>(ANCH_BIND_LISTENER_FN(ClientListener::OnEntityDamaged));
+
 		m_Listener = GetClientSocket().OnMessageReceived().AddScopedEventListener([this](Event<ServerMessageReceived>& e)
 			{
 				MessageType type = e.Data.Type;
@@ -312,10 +315,7 @@ namespace Anarchy
 			HandleIncomingMessage(request);
 			ResetTimeSinceLastReceivedMessage();
 			SetRemoteSequenceId(request.Header.SequenceId);
-			if (IsConnected())
-			{
-				SendKeepAlive();
-			}
+			SendAck();
 
 			for (const GenericAction& action : request.Message.Updates)
 			{
@@ -331,6 +331,41 @@ namespace Anarchy
 		auto message = CreateMessage(action);
 		HandleOutgoingMessage(message);
 		GetClientSocket().SendPacket(MessageType::InputCommand, message);
+	}
+
+	void ClientListener::OnEntityDied(const NetworkMessage<MEntityDied>& message)
+	{
+		HandleIncomingMessage(message);
+		ResetTimeSinceLastReceivedMessage();
+		SetRemoteSequenceId(message.Header.SequenceId);
+		SendAck();
+
+		ClientEntityCollection& entities = ClientState::Get().GetEntities();
+		EntityHandle entity = entities.GetEntityByNetworkId(message.Message.NetworkId);
+		if (entity)
+		{
+			if (entities.IsControllingEntity(message.Message.NetworkId))
+			{
+				entities.SetControlledEntity(InvalidNetworkId);
+			}
+			entity.Destroy();
+		}
+	}
+
+	void ClientListener::OnEntityDamaged(const NetworkMessage<MEntityDamaged>& message)
+	{
+		HandleIncomingMessage(message);
+		ResetTimeSinceLastReceivedMessage();
+		SetRemoteSequenceId(message.Header.SequenceId);
+		SendAck();
+	}
+
+	void ClientListener::SendAck()
+	{
+		if (IsConnected())
+		{
+			SendKeepAlive();
+		}
 	}
 
 	void ClientListener::DisconnectInternal()

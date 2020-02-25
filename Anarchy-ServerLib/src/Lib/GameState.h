@@ -17,6 +17,11 @@ namespace Anarchy
 		int DimensionId = 0;
 		int HeightLevel = 0;
 		Vector2i TilePosition;
+		std::string Name;
+
+		float MaxHealth;
+		float CurrentHealth;
+		float Shield;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const EntityData& value)
@@ -27,6 +32,11 @@ namespace Anarchy
 		Serialize(stream, value.DimensionId);
 		Serialize(stream, value.HeightLevel);
 		Serialize(stream, value.TilePosition);
+		Serialize(stream, value.Name);
+
+		Serialize(stream, value.MaxHealth);
+		Serialize(stream, value.CurrentHealth);
+		Serialize(stream, value.Shield);
 	}
 
 	inline void Deserialize(InputMemoryStream& stream, EntityData& value)
@@ -37,29 +47,11 @@ namespace Anarchy
 		Deserialize(stream, value.DimensionId);
 		Deserialize(stream, value.HeightLevel);
 		Deserialize(stream, value.TilePosition);
-	}
+		Deserialize(stream, value.Name);
 
-	// =======================================================================================
-	// ENTITY DELTA
-	// =======================================================================================
-
-	struct EntityDelta
-	{
-	public:
-		entityid_t NetworkId = 0;
-		Vector2i TilePosition;
-	};
-
-	inline void Serialize(OutputMemoryStream& stream, const EntityDelta& value)
-	{
-		Serialize(stream, value.NetworkId);
-		Serialize(stream, value.TilePosition);
-	}
-
-	inline void Deserialize(InputMemoryStream& stream, EntityDelta& value)
-	{
-		Deserialize(stream, value.NetworkId);
-		Deserialize(stream, value.TilePosition);
+		Deserialize(stream, value.MaxHealth);
+		Deserialize(stream, value.CurrentHealth);
+		Deserialize(stream, value.Shield);
 	}
 
 }

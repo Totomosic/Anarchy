@@ -126,14 +126,19 @@ namespace Anarchy
 	{
 	public:
 		static constexpr MessageType Type = MessageType::CreateCharacterRequest;
+
+	public:
+		std::string Name;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const CreateCharacterRequest& request)
 	{
+		Serialize(stream, request.Name);
 	}
 
 	inline void Deserialize(InputMemoryStream& stream, CreateCharacterRequest& request)
 	{
+		Deserialize(stream, request.Name);
 	}
 
 	struct CreateCharacterResponse

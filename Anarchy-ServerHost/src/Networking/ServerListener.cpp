@@ -146,7 +146,9 @@ namespace Anarchy
 			response.Data.Level = 1;
 			response.Data.PrefabId = 0;
 			response.Data.DimensionId = 0;
-			response.Data.TilePosition = { 300, 300 };
+			WorldReader& world = ServerState::Get().GetWorld();
+			response.Data.TilePosition = { (int)world.GetWidthInTiles() / 2, (int)world.GetHeightInTiles() / 2 };
+			response.Data.Name = request.Request.Message.Name;
 
 			SpawnEntitiesRequest spawnRequest;
 			spawnRequest.Entities.push_back(response.Data);
@@ -260,6 +262,38 @@ namespace Anarchy
 			if (m_ActionBuffer != nullptr)
 			{
 				m_ActionBuffer->PushAction(action.Message, true);
+			}
+		}
+	}
+
+	void ServerListener::EntityDied(const std::vector<connid_t>& connections, const MEntityDied& message)
+	{
+		for (connid_t connectionId : connections)
+		{
+			ClientConnection* connection = GetConnection(connectionId);
+			if (connection != nullptr)
+			{
+				connection->ResetTimeSinceLastSentPacket();
+				auto networkMessage = CreateMessage(connectionId, message);
+				HandleOutgoingMessage(connection, networkMessage);
+				BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Entity Died Message", connection->GetConnectionId(), connection->GetSequenceId());
+				GetSocket().SendPacket(connection->GetAddress(), MEntityDied::Type, networkMessage);
+			}
+		}
+	}
+
+	void ServerListener::EntityDamaged(const std::vector<connid_t>& connections, const MEntityDamaged& message)
+	{
+		for (connid_t connectionId : connections)
+		{
+			ClientConnection* connection = GetConnection(connectionId);
+			if (connection != nullptr)
+			{
+				connection->ResetTimeSinceLastSentPacket();
+				auto networkMessage = CreateMessage(connectionId, message);
+				HandleOutgoingMessage(connection, networkMessage);
+				BLT_TRACE("[ConnectionId={0}] [SequenceId={1}] Sending Entity Damaged Message", connection->GetConnectionId(), connection->GetSequenceId());
+				GetSocket().SendPacket(connection->GetAddress(), MEntityDamaged::Type, networkMessage);
 			}
 		}
 	}

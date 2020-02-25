@@ -5,6 +5,12 @@
 
 #include "ServerState.h"
 
+#include "Lib/Entities/Components/TilePosition.h"
+#include "Lib/Entities/Components/NetworkId.h"
+#include "Lib/Entities/Components/DimensionId.h"
+#include "Lib/Entities/Components/Health.h"
+#include "Lib/Entities/Components/EntityName.h"
+
 namespace Anarchy
 {
 
@@ -90,6 +96,8 @@ namespace Anarchy
 				LogMessage("/list");
 				LogMessage("/disconnect ConnectionId");
 				LogMessage("/throttle [BytesPerSecond]");
+				LogMessage("/entities [ConnectionId]");
+				LogMessage("/kill EntityId");
 			});
 
 		m_Registry.Register("status", [this](const RunDebugCommand& command)
@@ -103,20 +111,22 @@ namespace Anarchy
 				}
 				else if (command.Args.size() == 1)
 				{
-					try
+					connid_t connectionId;
+					if (GetIntegerArg(command.Args[0], &connectionId))
 					{
-						connid_t connectionId = std::stoi(command.Args[0]);
 						if (ServerState::Get().GetConnections().HasConnection(connectionId))
 						{
 							ClientConnection& connection = ServerState::Get().GetConnections().GetConnection(connectionId);
 							LogMessage("Active Connection: ConnectionId=" + std::to_string(connection.GetConnectionId()));
 							LogMessage("Address: " + connection.GetAddress().ToString());
 							LogMessage("Average RTT: " + std::to_string(connection.GetAverageRTT()) + "ms");
-							return;
 						}
-						BLT_ERROR("No connection with id {} exists", connectionId);
+						else
+						{
+							BLT_ERROR("No connection with id {} exists", connectionId);
+						}
 					}
-					catch (std::invalid_argument e)
+					else
 					{
 						BLT_ERROR("Invalid ConnectionId argument");
 					}
@@ -147,29 +157,25 @@ namespace Anarchy
 					BLT_ERROR("Invalid usage of /disconnect connectionId");
 					return;
 				}
-				try
+				connid_t connectionId;
+				if (GetIntegerArg(command.Args[0], &connectionId))
 				{
-					connid_t connectionId = std::stoi(command.Args[0]);
 					if (ServerState::Get().GetConnections().HasConnection(connectionId))
-					{
 						ServerState::Get().GetSocketApi().ForceDisconnectConnections({ connectionId });
-						return;
-					}
-					BLT_ERROR("No connection with id {} exists", connectionId);
+					else
+						BLT_ERROR("No connection with id {} exists", connectionId);
 				}
-				catch (std::invalid_argument e)
-				{
+				else
 					BLT_ERROR("Invalid ConnectionId argument");
-				}				
 			});
 
 		m_Registry.Register("throttle", [this](const RunDebugCommand& command)
 			{
 				if (command.Args.size() == 1)
 				{
-					try
+					int64_t bytesPerSecond;
+					if (GetIntegerArg(command.Args[0], &bytesPerSecond))
 					{
-						int64_t bytesPerSecond = std::stoi(command.Args[0]);
 						if (bytesPerSecond < 0)
 						{
 							BLT_ERROR("Invalid BytesPerSecond argument");
@@ -180,7 +186,7 @@ namespace Anarchy
 							LogMessage("Set server to maximum of " + std::to_string(bytesPerSecond) + " bytes per second");
 						}
 					}
-					catch (std::invalid_argument e)
+					else
 					{
 						BLT_ERROR("Invalid BytesPerSecond argument");
 					}
@@ -195,6 +201,91 @@ namespace Anarchy
 					BLT_ERROR("Invalid args for /throttle");
 				}
 			});
+
+		m_Registry.Register("entities", [this](const RunDebugCommand& command)
+			{
+				ServerEntityCollection& entities = ServerState::Get().GetEntities();
+				if (command.Args.size() == 0)
+				{
+					// All entities
+					std::vector<EntityHandle> allEntities = entities.GetAllEntities();
+					LogMessage("Currently " + std::to_string(allEntities.size()) + " entities");
+					for (EntityHandle entity : allEntities)
+					{
+						LogEntity(entity);
+					}
+				}
+				else
+				{
+					connid_t connectionId;
+					if (GetIntegerArg(command.Args[0], &connectionId))
+					{
+						if (connectionId >= 0 && ServerState::Get().GetConnections().HasConnection(connectionId))
+						{
+							std::vector<entityid_t> allEntities = entities.GetAllIdsOwnedBy(connectionId);
+							LogMessage("Connection with id " + std::to_string(connectionId) + " owns " + std::to_string(allEntities.size()) + " entities");
+							for (entityid_t id : allEntities)
+							{
+								LogEntity(entities.GetEntityByNetworkId(id));
+							}
+						}
+						else
+						{
+							BLT_ERROR("No connection with id {}", connectionId);
+						}
+					}
+					else
+					{
+						BLT_ERROR("Invalid ConnectionId argument");
+					}
+				}
+			});
+
+		m_Registry.Register("kill", [this](const RunDebugCommand& command)
+			{
+				if (command.Args.size() == 1)
+				{
+					ServerEntityCollection& entities = ServerState::Get().GetEntities();
+					entityid_t networkId;
+					if (GetIntegerArg(command.Args[0], &networkId))
+					{
+						if (networkId >= 0 && entities.HasEntity(networkId))
+						{
+							MEntityDied message;
+							message.NetworkId = networkId;
+							ServerState::Get().GetSocketApi().EntityDied(ServerState::Get().GetConnections().GetAllConnectionIds(), message);
+							entities.RemoveEntity(networkId);
+						}
+						else
+						{
+							BLT_ERROR("No entity with id {} exists", networkId);
+						}
+					}
+					else
+					{
+						BLT_ERROR("Invalid EntityId argument");
+					}
+				}
+				else
+				{
+					BLT_ERROR("Invalid argument count");
+				}
+			});
+	}
+
+	void DebugCommandManager::LogEntity(const EntityHandle& entity) const
+	{
+		ComponentHandle tilePosition = entity.GetComponent<CTilePosition>();
+		ComponentHandle networkId = entity.GetComponent<CNetworkId>();
+		ComponentHandle dimensionId = entity.GetComponent<CDimensionId>();
+		ComponentHandle lifeforce = entity.GetComponent<CLifeForce>();
+		std::string message = "EntityId=" + std::to_string(networkId->Id) + ", DimensionId=" + std::to_string(dimensionId->Id) + ", Position=[" + std::to_string(tilePosition->Position.x) + ", " + std::to_string(tilePosition->Position.y) + "]";
+		if (entity.HasComponent<CEntityName>())
+		{
+			ComponentHandle name = entity.GetComponent<CEntityName>();
+			message += ", Name=\"" + name->Name + '"';
+		}
+		LogMessage(message);
 	}
 
 }

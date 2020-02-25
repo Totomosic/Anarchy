@@ -33,7 +33,7 @@ namespace Anarchy
 
 		virtual EntityHandle CreateEntity(entityid_t networkId, const EntityHandle& entity);
 		EntityHandle CreateEntity(entityid_t networkId, prefab_t prefabId);
-		EntityHandle CreateFromEntityData(const EntityData& data);
+		virtual EntityHandle CreateFromEntityData(const EntityData& data);
 
 		void RemoveEntity(entityid_t networkId);
 

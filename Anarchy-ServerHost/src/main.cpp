@@ -16,7 +16,7 @@ namespace Anarchy
 		info.UseSockets = true;
 		Engine e(info);
 
-		argparse::ArgumentParser parser("Anarchy-Server");
+		argparse::ArgumentParser parser("Anarchy-ServerHost");
 		parser.add_argument()
 			.name("--bind-address")
 			.description("Address to bind to")

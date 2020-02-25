@@ -78,6 +78,9 @@ namespace Anarchy
 
 		void SendAction(const GenericAction& command) override;
 
+		void OnEntityDied(const NetworkMessage<MEntityDied>& message) override;
+		void OnEntityDamaged(const NetworkMessage<MEntityDamaged>& message) override;
+
 		template<typename TRequest>
 		void Register(const std::function<void(const NetworkMessage<TRequest>&)>& callback)
 		{
@@ -87,11 +90,15 @@ namespace Anarchy
 			{
 				NetworkMessage<TRequest> request;
 				Deserialize(stream, request);
-				callback(request);
+				m_TaskManager.RunOnMainThread([callback, request]()
+					{
+						callback(request);
+					});
 			};
 		}
 
 	private:
+		void SendAck();
 		void DisconnectInternal();
 
 		void IncrementSequenceId(seqid_t amount = 1);

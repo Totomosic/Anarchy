@@ -30,7 +30,11 @@ namespace Anarchy
 		DestroyEntities,
 		UpdateEntities,
 
-		InputCommand
+		InputCommand,
+
+		EntityDied,
+		EntityDamaged,
+		EntityRespawned
 	};
 
 	ANCH_DEFINE_DEFAULT_SERIALIZE(MessageType);

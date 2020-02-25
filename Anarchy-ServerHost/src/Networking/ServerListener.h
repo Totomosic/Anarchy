@@ -83,6 +83,9 @@ namespace Anarchy
 
 		void OnAction(const ServerNetworkMessage<GenericAction>& command) override;
 
+		void EntityDied(const std::vector<connid_t>& connections, const MEntityDied& message) override;
+		void EntityDamaged(const std::vector<connid_t>& connections, const MEntityDamaged& message) override;
+
 	private:
 		void SendKeepAliveInternal(const std::vector<connid_t>& connections);
 		void ForceDisconnectConnectionsInternal(const std::vector<connid_t>& connectionIds);

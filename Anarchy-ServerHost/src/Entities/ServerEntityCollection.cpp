@@ -14,7 +14,8 @@ namespace Anarchy
 			{
 				if (e.Data.Entity.HasComponent<CNetworkId>())
 				{
-					m_NetworkIdManager.ReleaseId(e.Data.Entity.GetComponent<CNetworkId>()->Id);
+					entityid_t networkId = e.Data.Entity.GetComponent<CNetworkId>()->Id;
+					m_NetworkIdManager.ReleaseId(networkId);
 				}
 			});
 	}

@@ -7,17 +7,19 @@ namespace Anarchy
 	class ClientEntityCollection : public EntityCollection
 	{
 	private:
-		entityid_t m_OwnedEntity;
+		entityid_t m_ControlledEntity;
 		EntityHandle m_Camera;
 
 	public:
 		ClientEntityCollection(Scene& scene, Layer& layer);
 
-		bool OwnsEntity(entityid_t networkId) const;
+		bool IsControllingEntity(entityid_t networkId) const;
 		EntityHandle GetCamera() const;
 
-		void SetOwnedEntity(entityid_t networkId);
+		void SetControlledEntity(entityid_t networkId);
 		void SetCamera(const EntityHandle& camera);
+
+		EntityHandle CreateFromEntityData(const EntityData& data) override;
 
 	};
 
