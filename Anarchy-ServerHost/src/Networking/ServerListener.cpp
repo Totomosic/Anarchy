@@ -10,7 +10,7 @@ namespace Anarchy
 #define ANCH_SERVER_BIND_FN(fn) std::bind(&fn, this, std::placeholders::_1)
 
 	ServerListener::ServerListener(ServerSocket& socket)
-		: m_Listener(), m_ServerSocket(socket), m_MessageHandlers(), m_ActionBuffer(), m_Mutex()
+		: m_Listener(), m_ServerSocket(socket), m_MessageHandlers(), m_ActionQueue(), m_Mutex()
 	{
 		Register<ServerConnectionResponse, ServerConnectionRequest>(ANCH_SERVER_BIND_FN(ServerListener::Connect));
 		Register<ServerDisconnectResponse, ServerDisconnectRequest>(ANCH_SERVER_BIND_FN(ServerListener::Disconnect));
@@ -33,15 +33,15 @@ namespace Anarchy
 			});
 	}
 
-	ActionBuffer* ServerListener::GetActionBuffer() const
+	ActionQueue* ServerListener::GetActionQueue() const
 	{
-		return m_ActionBuffer;
+		return m_ActionQueue;
 	}
 
-	void ServerListener::SetActionBuffer(ActionBuffer* buffer)
+	void ServerListener::SetActionQueue(ActionQueue* queue)
 	{
 		std::scoped_lock<std::mutex> lock(m_Mutex);
-		m_ActionBuffer = buffer;
+		m_ActionQueue = queue;
 	}
 
 	void ServerListener::Update(TimeDelta delta)
@@ -180,7 +180,7 @@ namespace Anarchy
 			GetEntitiesResponse response;
 			for (EntityHandle entity : ServerState::Get().GetEntities().GetAllEntities())
 			{
-				response.Entities.push_back(ServerState::Get().GetEntities().GetDataFromEntity(entity));
+				response.Entities.push_back(ServerState::Get().GetEntities().GetStateFromEntity(entity));
 			}
 			return response;
 		}
@@ -259,9 +259,9 @@ namespace Anarchy
 			HandleIncomingMessage(action);
 			connection->SetRemoteSequenceId(action.Header.SequenceId);
 			connection->ResetTimeSinceLastPacket();
-			if (m_ActionBuffer != nullptr)
+			if (m_ActionQueue != nullptr)
 			{
-				m_ActionBuffer->PushAction(action.Message, true);
+				m_ActionQueue->PushAction(action.Message);
 			}
 		}
 	}
@@ -333,7 +333,7 @@ namespace Anarchy
 
 	void ServerListener::SpawnEntitiesInternal(const std::vector<connid_t>& connections, const SpawnEntitiesRequest& request, connid_t ownerConnectionId)
 	{
-		for (const EntityData& entity : request.Entities)
+		for (const EntityState& entity : request.Entities)
 		{
 			EntityHandle e = ServerState::Get().GetEntities().CreateFromEntityData(entity, ownerConnectionId);
 		}

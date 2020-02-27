@@ -1,6 +1,6 @@
 #pragma once
 #include "clientpch.h"
-#include "Lib/Entities/ActionBuffer.h"
+#include "Lib/Entities/ActionQueue.h"
 
 namespace Anarchy
 {

@@ -2,7 +2,7 @@
 #include "Engine/Scene/Scene.h"
 #include "ServerLib.h"
 #include "Lib/PrefabRegistry.h"
-#include "Lib/GameState.h"
+#include "Lib/Entities/EntityState.h"
 
 namespace Anarchy
 {
@@ -33,12 +33,13 @@ namespace Anarchy
 
 		virtual EntityHandle CreateEntity(entityid_t networkId, const EntityHandle& entity);
 		EntityHandle CreateEntity(entityid_t networkId, prefab_t prefabId);
-		virtual EntityHandle CreateFromEntityData(const EntityData& data);
+		virtual EntityHandle CreateFromEntityState(const EntityState& state);
+		virtual EntityHandle ApplyEntityState(const EntityState& state);
 
 		void RemoveEntity(entityid_t networkId);
 
 		Vector2i GetEntityTilePosition(const EntityHandle& entity) const;
-		EntityData GetDataFromEntity(const EntityHandle& entity) const;
+		EntityState GetStateFromEntity(const EntityHandle& entity) const;
 	};
 
 }

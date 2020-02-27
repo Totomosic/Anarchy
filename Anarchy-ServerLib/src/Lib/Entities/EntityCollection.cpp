@@ -79,27 +79,55 @@ namespace Anarchy
 		return entity;
 	}
 
-	EntityHandle EntityCollection::CreateFromEntityData(const EntityData& data)
+	EntityHandle EntityCollection::CreateFromEntityState(const EntityState& state)
 	{
-		EntityHandle entity = CreateEntity(data.NetworkId, data.PrefabId);
-		entity.Assign<CDimensionId>(CDimensionId{ data.DimensionId });
+		EntityHandle entity = CreateEntity(state.NetworkId, state.PrefabId);
+		entity.Assign<CDimensionId>(CDimensionId{ state.DimensionId });
 		if (entity.HasComponent<CTilePosition>())
 		{
-			entity.GetComponent<CTilePosition>()->Position = data.TilePosition;
+			entity.GetComponent<CTilePosition>()->Position = state.TilePosition;
 		}
 		if (entity.HasComponent<Transform>())
 		{
-			entity.GetTransform()->SetLocalPosition(data.TilePosition.x, data.TilePosition.y, 0.0f);
+			entity.GetTransform()->SetLocalPosition(state.TilePosition.x, state.TilePosition.y, 0.0f);
 		}
-		if (!data.Name.empty())
+		if (!state.Name.empty())
 		{
-			entity.Assign<CEntityName>(CEntityName{ data.Name });
+			entity.Assign<CEntityName>(CEntityName{ state.Name });
 		}
 		CLifeForce lf;
-		lf.CurrentHealth = data.CurrentHealth;
-		lf.MaxHealth = data.MaxHealth;
-		lf.Shield = data.Shield;
+		lf.CurrentHealth = state.CurrentHealth;
+		lf.MaxHealth = state.MaxHealth;
+		lf.Shield = state.CurrentShield;
 		entity.Assign<CLifeForce>(lf);
+		return entity;
+	}
+
+	EntityHandle EntityCollection::ApplyEntityState(const EntityState& state)
+	{
+		EntityHandle entity = GetEntityByNetworkId(state.NetworkId);
+		if (entity)
+		{
+			entity.GetComponent<CPrefabId>()->Id = state.PrefabId;
+			entity.GetComponent<CDimensionId>()->Id = state.DimensionId;
+			entity.GetComponent<CTilePosition>()->Position = state.TilePosition;
+			ComponentHandle lf = entity.GetComponent<CLifeForce>();
+			lf->CurrentHealth = state.CurrentHealth;
+			lf->MaxHealth = state.MaxHealth;
+			lf->Shield = state.CurrentShield;
+			if (state.Name.empty())
+			{
+				if (entity.HasComponent<CEntityName>())
+					entity.Remove<CEntityName>();
+			}
+			else
+			{
+				if (!entity.HasComponent<CEntityName>())
+					entity.Assign<CEntityName>(CEntityName{ state.Name });
+				else
+					entity.GetComponent<CEntityName>()->Name = state.Name;
+			}
+		}
 		return entity;
 	}
 
@@ -117,24 +145,25 @@ namespace Anarchy
 		return xy;
 	}
 
-	EntityData EntityCollection::GetDataFromEntity(const EntityHandle& entity) const
+	EntityState EntityCollection::GetStateFromEntity(const EntityHandle& entity) const
 	{
-		EntityData data;
-		data.NetworkId = entity.GetComponent<CNetworkId>()->Id;
-		data.PrefabId = entity.GetComponent<CPrefabId>()->Id;
-		data.DimensionId = entity.GetComponent<CDimensionId>()->Id;
-		data.HeightLevel = 0;
-		data.Level = 1;
-		data.TilePosition = GetEntityTilePosition(entity);
+		EntityState state;
+		state.NetworkId = entity.GetComponent<CNetworkId>()->Id;
+		state.PrefabId = entity.GetComponent<CPrefabId>()->Id;
+		state.DimensionId = entity.GetComponent<CDimensionId>()->Id;
+		state.HeightLevel = 0;
+		state.Level = 1;
+		state.TilePosition = GetEntityTilePosition(entity);
+		state.TileSize = { 1, 1 };
 		if (entity.HasComponent<CEntityName>())
 		{
-			data.Name = entity.GetComponent<CEntityName>()->Name;
+			state.Name = entity.GetComponent<CEntityName>()->Name;
 		}
 		ComponentHandle lifeforce = entity.GetComponent<CLifeForce>();
-		data.MaxHealth = lifeforce->MaxHealth;
-		data.CurrentHealth = lifeforce->CurrentHealth;
-		data.Shield = lifeforce->Shield;
-		return data;
+		state.MaxHealth = lifeforce->MaxHealth;
+		state.CurrentHealth = lifeforce->CurrentHealth;
+		state.CurrentShield = lifeforce->Shield;
+		return state;
 	}
 
 }

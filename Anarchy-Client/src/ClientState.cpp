@@ -21,7 +21,7 @@ namespace Anarchy
 	}
 
 	ClientState::ClientState()
-		: m_Connection(), m_Tilemap(), m_Entities()
+		: m_Connection(), m_Tilemap(), m_Entities(), m_Actions(), m_ActionRegistry()
 	{
 	}
 
@@ -38,6 +38,7 @@ namespace Anarchy
 	void ClientState::InitializeEntities(Scene& gameScene, Layer& gameLayer)
 	{
 		m_Entities = std::make_unique<ClientEntityCollection>(gameScene, gameLayer);
+		m_Actions.Reset();
 	}
 
 	bool ClientState::HasConnection() const
@@ -98,6 +99,26 @@ namespace Anarchy
 	void ClientState::DestroyTilemap()
 	{
 		m_Tilemap = nullptr;
+	}
+
+	const ActionHistory& ClientState::GetActionHistory() const
+	{
+		return m_Actions;
+	}
+
+	ActionHistory& ClientState::GetActionHistory()
+	{
+		return m_Actions;
+	}
+
+	const ActionRegistry& ClientState::GetActionRegistry() const
+	{
+		return m_ActionRegistry;
+	}
+
+	ActionRegistry& ClientState::GetActionRegistry()
+	{
+		return m_ActionRegistry;
 	}
 
 }

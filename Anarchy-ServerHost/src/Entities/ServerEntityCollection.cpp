@@ -42,9 +42,9 @@ namespace Anarchy
 		return CreateEntity(networkId, m_Prefabs.CreateEntity(prefabId, false), ownerConnectionId);
 	}
 
-	EntityHandle ServerEntityCollection::CreateFromEntityData(const EntityData& data, connid_t ownerConnectionId)
+	EntityHandle ServerEntityCollection::CreateFromEntityData(const EntityState& state, connid_t ownerConnectionId)
 	{
-		EntityHandle entity = EntityCollection::CreateFromEntityData(data);
+		EntityHandle entity = EntityCollection::CreateFromEntityState(state);
 		if (ownerConnectionId != InvalidConnectionId)
 		{
 			entity.Assign<CEntityOwner>(CEntityOwner{ ownerConnectionId });

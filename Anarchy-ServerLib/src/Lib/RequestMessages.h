@@ -1,7 +1,6 @@
 #pragma once
 #include "ServerLib.h"
-#include "GameState.h"
-
+#include "Lib/Entities/EntityState.h"
 #include "Lib/Entities/EntityActions.h"
 #include "World/Tile.h"
 
@@ -146,7 +145,7 @@ namespace Anarchy
 	public:
 		static constexpr MessageType Type = MessageType::CreateCharacterResponse;
 	public:
-		EntityData Data;
+		EntityState Data;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const CreateCharacterResponse& response)
@@ -188,7 +187,7 @@ namespace Anarchy
 		static constexpr MessageType Type = MessageType::GetEntitiesResponse;
 
 	public:
-		std::vector<EntityData> Entities;
+		std::vector<EntityState> Entities;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const GetEntitiesResponse& response)

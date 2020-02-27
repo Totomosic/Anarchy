@@ -97,4 +97,26 @@ namespace Anarchy
 		Deserialize(stream, message.DamageSources);
 	}
 
+	// =======================================================================================
+	// SET CONTROLLED ENTITY
+	// =======================================================================================
+
+	struct MSetControlledEntity
+	{
+	public:
+		static constexpr MessageType Type = MessageType::SetControlledEntity;
+	public:
+		entityid_t NetworkId;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const MSetControlledEntity& message)
+	{
+		Serialize(stream, message.NetworkId);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, MSetControlledEntity& message)
+	{
+		Deserialize(stream, message.NetworkId);
+	}
+
 }

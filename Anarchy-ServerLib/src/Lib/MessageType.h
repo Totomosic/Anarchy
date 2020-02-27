@@ -34,7 +34,8 @@ namespace Anarchy
 
 		EntityDied,
 		EntityDamaged,
-		EntityRespawned
+		EntityRespawned,
+		SetControlledEntity
 	};
 
 	ANCH_DEFINE_DEFAULT_SERIALIZE(MessageType);

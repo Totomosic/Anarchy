@@ -41,10 +41,10 @@ namespace Anarchy
 		}
 	}
 
-	EntityHandle ClientEntityCollection::CreateFromEntityData(const EntityData& data)
+	EntityHandle ClientEntityCollection::CreateFromEntityState(const EntityState& state)
 	{
-		EntityHandle entity = EntityCollection::CreateFromEntityData(data);
-		if (!data.Name.empty() && entity.HasComponent<Mesh>())
+		EntityHandle entity = EntityCollection::CreateFromEntityState(state);
+		if (!state.Name.empty() && entity.HasComponent<Mesh>())
 		{
 			ComponentHandle mesh = entity.GetComponent<Mesh>();
 			int materialIndex = (int)mesh->Materials.size();
@@ -54,7 +54,7 @@ namespace Anarchy
 			float scaling = scalingFactor / fontSize;
 
 			ResourcePtr<Font> font = ResourceManager::Get().Fonts().Arial(fontSize);
-			mesh->Models.push_back({ new Model(TextFactory(data.Name, font)), Matrix4f::Scale(scaling, scaling, 1.0f) * Matrix4f::Translation(0, fontSize / scalingFactor, 0), { materialIndex } });
+			mesh->Models.push_back({ new Model(TextFactory(state.Name, font)), Matrix4f::Scale(scaling, scaling, 1.0f) * Matrix4f::Translation(0, fontSize / scalingFactor, 0), { materialIndex } });
 			mesh->Materials.push_back(ResourceManager::Get().Materials().Font(font, Color::Black));
 		}
 		return entity;

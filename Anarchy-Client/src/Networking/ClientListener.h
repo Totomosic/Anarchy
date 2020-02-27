@@ -2,7 +2,7 @@
 #include "ClientSocket.h"
 #include "Lib/SequenceBuffer.h"
 #include "Lib/SocketApi.h"
-#include "Lib/Entities/ActionBuffer.h"
+#include "Lib/Entities/ActionQueue.h"
 #include "Core/Tasks/TaskManager.h"
 #include "Core/Time/TimeDelta.h"
 
@@ -42,7 +42,7 @@ namespace Anarchy
 		SequenceBuffer m_ReceivedMessages;
 		SequenceBuffer m_SentMessages;
 
-		ActionBuffer m_Actions;
+		std::unordered_map<entityid_t, EntityUpdate> m_ReceivedEntityUpdates;
 
 	public:
 		ClientListener(ClientSocket* socket);
@@ -57,7 +57,8 @@ namespace Anarchy
 		bool IsConnected() const;
 
 		connid_t GetConnectionId() const;
-		ActionBuffer& GetActionBuffer();
+		const std::unordered_map<entityid_t, EntityUpdate>& GetReceivedEntityUpdates() const;
+		void ClearReceivedEntityUpdates();
 
 		void Update(TimeDelta delta);
 

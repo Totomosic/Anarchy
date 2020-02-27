@@ -3,6 +3,8 @@
 #include "Entities/ClientEntityCollection.h"
 #include "World/TilemapRenderer.h"
 #include "World/Tilemap.h"
+#include "Entities/ActionHistory.h"
+#include "Entities/ActionRegistry.h"
 
 namespace Anarchy
 {
@@ -16,6 +18,8 @@ namespace Anarchy
 		std::unique_ptr<ConnectionManager> m_Connection;
 		std::unique_ptr<Tilemap> m_Tilemap;
 		std::unique_ptr<ClientEntityCollection> m_Entities;
+		ActionHistory m_Actions;
+		ActionRegistry m_ActionRegistry;
 
 	public:
 		static ClientState& Get();
@@ -42,6 +46,11 @@ namespace Anarchy
 		const Tilemap& GetTilemap() const;
 		Tilemap& GetTilemap();
 		void DestroyTilemap();
+
+		const ActionHistory& GetActionHistory() const;
+		ActionHistory& GetActionHistory();
+		const ActionRegistry& GetActionRegistry() const;
+		ActionRegistry& GetActionRegistry();
 
 	};
 

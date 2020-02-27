@@ -5,6 +5,7 @@
 #include "Lib/RequestMessages.h"
 #include "Lib/GameMessages.h"
 #include "ServerState.h"
+#include "Lib/Entities/ActionExecutor.h"
 
 #include "Utils/Config.h"
 
@@ -21,19 +22,7 @@ namespace Anarchy
 		Scene& gameScene = SceneManager::Get().AddScene();
 		Layer& gameLayer = gameScene.AddLayer();
 		ServerState::Get().Initialize(ServerAddress, gameScene, gameLayer);
-		ServerState::Get().GetSocketApi().SetActionBuffer(&m_Actions);
-
-		ServerEntityCollection& entities = ServerState::Get().GetEntities();
-		m_Actions.RegisterHandler<TileMovement>(ActionType::EntityMove, [&entities](const InputAction<TileMovement>& action, bool fromNetwork)
-			{
-				entities.SetEntityDirty(action.NetworkId);
-				EntityHandle entity = entities.GetEntityByNetworkId(action.NetworkId);
-				if (entity)
-				{
-					ComponentHandle position = entity.GetComponent<CTilePosition>();
-					position->Position = action.Action.Destination;
-				}
-			});
+		ServerState::Get().GetSocketApi().SetActionQueue(&m_Actions);
 	}
 
 	void Server::Tick()
@@ -54,14 +43,24 @@ namespace Anarchy
 		ServerState::Get().GetSocketApi().Update(Time::Get().RenderingTimeline().DeltaTime());
 
 		ServerEntityCollection& entities = ServerState::Get().GetEntities();
+		ActionExecutor executor;
 		UpdateEntitiesRequest request;
-
-		for (const GenericAction& action : m_Actions.GetNetworkActions())
+		std::unordered_map<entityid_t, std::vector<GenericAction>> actions;
+		for (const GenericAction& action : m_Actions.GetAllActions())
 		{
-			request.Updates.push_back(action);
+			actions[action.NetworkId].push_back(action);
 		}
-
-		m_Actions.ProcessAllActions();
+		for (const auto& pair : actions)
+		{
+			EntityHandle entity = entities.GetEntityByNetworkId(pair.first);
+			if (entity)
+			{
+				EntityState initialState = entities.GetStateFromEntity(entity);
+				EntityState finalState = executor.ApplyActions(initialState, pair.second);
+				entities.ApplyEntityState(finalState);
+				request.Updates.push_back({ finalState, pair.second });
+			}
+		}
 		m_Actions.Clear();
 		
 		ServerState::Get().GetSocketApi().UpdateEntities(ServerState::Get().GetConnections().GetAllConnectionIds(), request);

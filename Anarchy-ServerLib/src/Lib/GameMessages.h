@@ -1,7 +1,6 @@
 #pragma once
 #include "ServerLib.h"
-#include "GameState.h"
-
+#include "Lib/Entities/EntityState.h"
 #include "Lib/Entities/EntityActions.h"
 #include "World/Tile.h"
 
@@ -52,9 +51,8 @@ namespace Anarchy
 	{
 	public:
 		static constexpr MessageType Type = MessageType::SpawnEntities;
-
 	public:
-		std::vector<EntityData> Entities;
+		std::vector<EntityState> Entities;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const SpawnEntitiesRequest& request)
@@ -75,7 +73,6 @@ namespace Anarchy
 	{
 	public:
 		static constexpr MessageType Type = MessageType::DestroyEntities;
-
 	public:
 		std::vector<entityid_t> Entities;
 	};
@@ -94,13 +91,31 @@ namespace Anarchy
 	// UPDATE ENTITIES
 	// =======================================================================================
 
+	struct EntityUpdate
+	{
+	public:
+		EntityState FinalState;
+		std::vector<GenericAction> Actions;
+	};
+
+	inline void Serialize(OutputMemoryStream& stream, const EntityUpdate& update)
+	{
+		Serialize(stream, update.FinalState);
+		Serialize(stream, update.Actions);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, EntityUpdate& update)
+	{
+		Deserialize(stream, update.FinalState);
+		Deserialize(stream, update.Actions);
+	}
+
 	struct UpdateEntitiesRequest
 	{
 	public:
 		static constexpr MessageType Type = MessageType::UpdateEntities;
-
 	public:
-		std::vector<GenericAction> Updates;
+		std::vector<EntityUpdate> Updates;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const UpdateEntitiesRequest& request)

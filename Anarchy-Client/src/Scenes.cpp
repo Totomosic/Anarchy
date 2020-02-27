@@ -102,18 +102,19 @@ namespace Anarchy
 					ClientState::Get().InitializeEntities(scene, gameLayer);
 					ClientEntityCollection& entities = ClientState::Get().GetEntities();
 
-					EntityHandle player = entities.CreateFromEntityData(character->Data);
+					EntityHandle player = entities.CreateFromEntityState(character->Data);
 					ComponentHandle controller = player.Assign<CPlayerController>();
 					controller->Speed = 10.0f;
 
-					ActionBuffer& commands = ClientState::Get().GetConnection().GetSocketApi().GetActionBuffer();
+					ActionHistory& actions = ClientState::Get().GetActionHistory();
+					ActionRegistry& registry = ClientState::Get().GetActionRegistry();
 					auto movementSystem = gameLayer.Systems().Add<MovementSystem>();
-					auto controlSystem = gameLayer.Systems().Add<PlayerControlSystem>(&commands);
+					auto controlSystem = gameLayer.Systems().Add<PlayerControlSystem>(&actions, &registry);
 
 					entities.SetCamera(camera);
 					entities.SetControlledEntity(character->Data.NetworkId);
 
-					commands.RegisterHandler<TileMovement>(ActionType::EntityMove, [&entities](const InputAction<TileMovement>& action, bool fromNetwork)
+					/*commands.RegisterHandler<TileMovementAction>(ActionType::EntityMove, [&entities](const TileMovementAction& action, bool fromNetwork)
 						{
 							if (!fromNetwork || !entities.IsControllingEntity(action.NetworkId))
 							{
@@ -128,16 +129,20 @@ namespace Anarchy
 									entity.Assign<CTileMotion>(std::move(motion));
 								}
 							}
-						});
+							else
+							{
+								// Validate that we are in the right position
+							}
+						});*/
 
 					std::optional<GetEntitiesResponse> otherEntities = ClientState::Get().GetConnection().GetSocketApi().GetEntities({ 0 }, 5.0).Result();
 					if (otherEntities)
 					{
-						for (const EntityData& data : otherEntities->Entities)
+						for (const EntityState& data : otherEntities->Entities)
 						{
 							if (data.NetworkId != character->Data.NetworkId)
 							{
-								entities.CreateFromEntityData(data);
+								entities.CreateFromEntityState(data);
 							}
 						}
 					}

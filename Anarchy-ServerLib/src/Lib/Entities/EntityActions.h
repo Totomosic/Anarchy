@@ -4,9 +4,9 @@
 namespace Anarchy
 {
 
-	enum class ActionType
+	enum class ActionType : uint8_t
 	{
-		EntityMove
+		EntityMove = 101
 	};
 
 	ANCH_DEFINE_DEFAULT_SERIALIZE(ActionType);
@@ -18,20 +18,25 @@ namespace Anarchy
 		static constexpr MessageType Type = MessageType::InputCommand;
 	public:
 		ActionType Action;
+		seqid_t ActionId;
+		entityid_t NetworkId;
 		std::shared_ptr<OutputMemoryStream> ActionData;
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const GenericAction& command)
 	{
 		Serialize(stream, command.Action);
+		Serialize(stream, command.ActionId);
+		Serialize(stream, command.NetworkId);
 		Serialize(stream, command.ActionData->GetRemainingDataSize());
 		stream.Write(command.ActionData->GetBufferPtr(), command.ActionData->GetRemainingDataSize());
-		command.ActionData->Skip(command.ActionData->GetRemainingDataSize());
 	}
 
 	inline void Deserialize(InputMemoryStream& stream, GenericAction& command)
 	{
 		Deserialize(stream, command.Action);
+		Deserialize(stream, command.ActionId);
+		Deserialize(stream, command.NetworkId);
 		size_t size;
 		Deserialize(stream, size);
 		command.ActionData = std::make_shared<OutputMemoryStream>(size);
@@ -39,54 +44,29 @@ namespace Anarchy
 		stream.Skip(size);
 	}
 
-	template<typename T>
-	struct InputAction
-	{
-	public:
-		static constexpr MessageType Type = MessageType::InputCommand;
-
-	public:
-		entityid_t NetworkId;
-		T Action;
-	};
-
-	template<typename T>
-	inline void Serialize(OutputMemoryStream& stream, const InputAction<T>& command)
-	{
-		Serialize(stream, command.NetworkId);
-		Serialize(stream, command.Action);
-	}
-
-	template<typename T>
-	inline void Deserialize(InputMemoryStream& stream, InputAction<T>& command)
-	{
-		Deserialize(stream, command.NetworkId);
-		Deserialize(stream, command.Action);
-	}
-
 	// =======================================================================================
-	// ENTITY MOVE COMMAND
+	// ENTITY MOVE ACTION
 	// =======================================================================================
 
-	struct TileMovement
+	struct TileMovementAction
 	{
 	public:
 		static constexpr ActionType Type = ActionType::EntityMove;
 	public:
-		Vector2i Destination;
+		Vector2i Movement;
 		float Speed;
 	};
 
-	inline void Serialize(OutputMemoryStream& stream, const TileMovement& command)
+	inline void Serialize(OutputMemoryStream& stream, const TileMovementAction& action)
 	{
-		Serialize(stream, command.Destination);
-		Serialize(stream, command.Speed);
+		Serialize(stream, action.Movement);
+		Serialize(stream, action.Speed);
 	}
 
-	inline void Deserialize(InputMemoryStream& stream, TileMovement& command)
+	inline void Deserialize(InputMemoryStream& stream, TileMovementAction& action)
 	{
-		Deserialize(stream, command.Destination);
-		Deserialize(stream, command.Speed);
+		Deserialize(stream, action.Movement);
+		Deserialize(stream, action.Speed);
 	}
 
 }

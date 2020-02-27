@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine/Scene/Systems/System.h"
 #include "../Components/PlayerController.h"
-#include "Lib/Entities/ActionBuffer.h"
+#include "Lib/Entities/ActionQueue.h"
 
 namespace Anarchy
 {

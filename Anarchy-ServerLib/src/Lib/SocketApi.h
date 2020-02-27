@@ -38,6 +38,7 @@ namespace Anarchy
 
 		virtual void EntityDied(const std::vector<connid_t>& connections, const MEntityDied& message) = 0;
 		virtual void EntityDamaged(const std::vector<connid_t>& connections, const MEntityDamaged& message) = 0;
+		//virtual void SetControlledEntity(connid_t connection, const MSetControlledEntity& message) = 0;
 	};
 
 	class ClientSocketApi
@@ -65,6 +66,7 @@ namespace Anarchy
 
 		virtual void OnEntityDied(const NetworkMessage<MEntityDied>& message) = 0;
 		virtual void OnEntityDamaged(const NetworkMessage<MEntityDamaged>& message) = 0;
+		//virtual void OnSetControlledEnttiy(const NetworkMessage<MSetControlledEntity>& message) = 0;
 	};
 
 }

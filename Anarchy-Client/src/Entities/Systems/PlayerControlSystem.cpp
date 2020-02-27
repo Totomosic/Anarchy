@@ -1,5 +1,7 @@
 #include "clientpch.h"
 #include "PlayerControlSystem.h"
+#include "Lib/Entities/ActionExecutor.h"
+#include "ClientState.h"
 
 #include "Lib/Entities/Components/NetworkId.h"
 #include "Lib/Entities/Components/TilePosition.h"
@@ -8,14 +10,14 @@
 namespace Anarchy
 {
 
-	PlayerControlSystem::PlayerControlSystem(ActionBuffer* actionBuffer)
-		: m_ActionBuffer(actionBuffer)
+	PlayerControlSystem::PlayerControlSystem(ActionHistory* actionHistory, ActionRegistry* actionRegistry)
+		: m_ActionHistory(actionHistory), m_ActionRegistry(actionRegistry)
 	{
 	}
 
 	void PlayerControlSystem::Update(EntityManager& manager, TimeDelta dt)
 	{
-		if (m_ActionBuffer != nullptr)
+		if (m_ActionHistory != nullptr && m_ActionRegistry != nullptr)
 		{
 			for (EntityHandle entity : manager.GetEntitiesWith<CPlayerController, CTilePosition, CNetworkId>())
 			{
@@ -42,11 +44,18 @@ namespace Anarchy
 					if (direction.x != 0 || direction.y != 0)
 					{
 						entityid_t networkId = entity.GetComponent<CNetworkId>()->Id;
-						InputAction<TileMovement> action;
-						action.NetworkId = networkId;
-						action.Action.Destination = entity.GetComponent<CTilePosition>()->Position + direction;
-						action.Action.Speed = entity.GetComponent<CPlayerController>()->Speed;
-						m_ActionBuffer->PushAction(action);
+						TileMovementAction action;
+						action.Movement = direction;
+						action.Speed = entity.GetComponent<CPlayerController>()->Speed;
+
+						m_ActionHistory->PushAction(networkId, action);
+						m_ActionRegistry->ApplyAction(networkId, action);
+						
+						ClientEntityCollection& entities = ClientState::Get().GetEntities();
+						EntityState state = entities.GetStateFromEntity(entity);
+						ActionExecutor executor;
+						EntityState finalState = executor.ApplyAction(state, action);
+						entities.ApplyEntityState(finalState);
 					}
 				}
 			}

@@ -19,7 +19,7 @@ namespace Anarchy
 		void SetControlledEntity(entityid_t networkId);
 		void SetCamera(const EntityHandle& camera);
 
-		EntityHandle CreateFromEntityData(const EntityData& data) override;
+		EntityHandle CreateFromEntityState(const EntityState& state) override;
 
 	};
 

@@ -2,7 +2,7 @@
 #include "ServerSocket.h"
 #include "Lib/SocketApi.h"
 #include "Lib/SequenceBuffer.h"
-#include "Lib/Entities/ActionBuffer.h"
+#include "Lib/Entities/ActionQueue.h"
 #include "Connections/ClientConnection.h"
 #include "Core/Time/Time.h"
 
@@ -15,15 +15,15 @@ namespace Anarchy
 		ScopedEventListener m_Listener;
 		ServerSocket& m_ServerSocket;
 		std::unordered_map<MessageType, std::function<void(const SocketAddress&, InputMemoryStream&)>> m_MessageHandlers;
-		ActionBuffer* m_ActionBuffer;
+		ActionQueue* m_ActionQueue;
 
 		std::mutex m_Mutex;
 
 	public:
 		ServerListener(ServerSocket& socket);
 
-		ActionBuffer* GetActionBuffer() const;
-		void SetActionBuffer(ActionBuffer* buffer);
+		ActionQueue* GetActionQueue() const;
+		void SetActionQueue(ActionQueue* buffer);
 
 		template<typename TResponse, typename TRequest>
 		void Register(const std::function<std::optional<TResponse>(const ServerRequest<ServerNetworkMessage<TRequest>>&)>& callback)

@@ -12,7 +12,7 @@ namespace Anarchy
 	ClientListener::ClientListener(ClientSocket* socket)
 		: m_Bus(), m_TaskManager(m_Bus), m_OnDisconnect(m_Bus.GetEmitter<ServerDisconnect>(ClientEvents::DisconnectedFromServer)), m_ConnectionId(InvalidConnectionId), m_Connecting(false),
 		m_Socket(socket), m_SequenceId(0), m_RemoteSequenceId(0), m_NextRequestId(0), m_Listener(), m_MessageHandlers(), m_RequestMutex(), m_RequestHandlers(),
-		m_TimeSinceLastReceivedMessage(0), m_TimeSinceLastSentMessage(0), m_ReceivedMessages(), m_SentMessages(), m_Actions()
+		m_TimeSinceLastReceivedMessage(0), m_TimeSinceLastSentMessage(0), m_ReceivedMessages(), m_SentMessages(), m_ReceivedEntityUpdates()
 	{
 		Register<KeepAlivePacket>(ANCH_BIND_LISTENER_FN(ClientListener::OnKeepAlive));
 
@@ -91,9 +91,14 @@ namespace Anarchy
 		return m_ConnectionId;
 	}
 
-	ActionBuffer& ClientListener::GetActionBuffer()
+	const std::unordered_map<entityid_t, EntityUpdate>& ClientListener::GetReceivedEntityUpdates() const
 	{
-		return m_Actions;
+		return m_ReceivedEntityUpdates;
+	}
+
+	void ClientListener::ClearReceivedEntityUpdates()
+	{
+		m_ReceivedEntityUpdates.clear();
 	}
 
 	seqid_t ClientListener::GetSequenceId() const
@@ -136,12 +141,6 @@ namespace Anarchy
 			}
 			else
 			{
-				for (const GenericAction& action : m_Actions.GetNetworkActions())
-				{
-					SendAction(action);
-				}
-				m_Actions.ProcessAllActions();
-				m_Actions.Clear();
 				m_TimeSinceLastSentMessage += delta.Milliseconds();
 				if (m_TimeSinceLastSentMessage >= 500)
 				{
@@ -290,9 +289,9 @@ namespace Anarchy
 			HandleIncomingMessage(request);
 			ResetTimeSinceLastReceivedMessage();
 			SetRemoteSequenceId(request.Header.SequenceId);
-			for (const EntityData& entity : request.Message.Entities)
+			for (const EntityState& entity : request.Message.Entities)
 			{
-				ClientState::Get().GetEntities().CreateFromEntityData(entity);
+				ClientState::Get().GetEntities().CreateFromEntityState(entity);
 			}
 		}
 	}
@@ -317,9 +316,18 @@ namespace Anarchy
 			SetRemoteSequenceId(request.Header.SequenceId);
 			SendAck();
 
-			for (const GenericAction& action : request.Message.Updates)
+			for (const EntityUpdate& update : request.Message.Updates)
 			{
-				GetActionBuffer().PushAction(action, false);
+				entityid_t networkId = update.FinalState.NetworkId;
+				if (m_ReceivedEntityUpdates.find(networkId) != m_ReceivedEntityUpdates.end())
+				{
+					m_ReceivedEntityUpdates[networkId].FinalState = update.FinalState;
+					m_ReceivedEntityUpdates[networkId].Actions = ConcatVectors(m_ReceivedEntityUpdates[networkId].Actions, update.Actions);
+				}
+				else
+				{
+					m_ReceivedEntityUpdates[update.FinalState.NetworkId] = update;
+				}
 			}
 		}
 	}
