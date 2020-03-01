@@ -315,7 +315,6 @@ namespace Anarchy
 			ResetTimeSinceLastReceivedMessage();
 			SetRemoteSequenceId(request.Header.SequenceId);
 			SendAck();
-
 			for (const EntityUpdate& update : request.Message.Updates)
 			{
 				entityid_t networkId = update.FinalState.NetworkId;

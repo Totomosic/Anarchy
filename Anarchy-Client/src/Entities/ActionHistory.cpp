@@ -58,7 +58,7 @@ namespace Anarchy
 			{
 				if (IsSeqIdGreater(action.ActionId, m_Actions[i].ActionId))
 				{
-					m_Actions.insert(m_Actions.begin() + i, action);
+					m_Actions.insert(m_Actions.begin() + i + 1, action);
 					break;
 				}
 			}
@@ -77,7 +77,7 @@ namespace Anarchy
 			for (int i = m_Actions.size() - 1; i >= 0; i--)
 			{
 				const GenericAction& action = m_Actions[i];
-				if (!IsSeqIdGreater(actionId, action.ActionId))
+				if (actionId == action.ActionId || IsSeqIdGreater(actionId, action.ActionId))
 				{
 					m_Actions.erase(m_Actions.begin(), m_Actions.begin() + i + 1);
 					break;

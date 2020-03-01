@@ -6,6 +6,7 @@
 #include "Lib/GameMessages.h"
 #include "ServerState.h"
 #include "Lib/Entities/ActionExecutor.h"
+#include "Lib/Entities/Components/NetworkId.h"
 
 #include "Utils/Config.h"
 
@@ -62,6 +63,17 @@ namespace Anarchy
 			}
 		}
 		m_Actions.Clear();
+		for (EntityHandle entity : entities.GetAllEntities())
+		{
+			if (entity)
+			{
+				entityid_t networkId = entity.GetComponent<CNetworkId>()->Id;
+				if (actions.find(networkId) == actions.end())
+				{
+					request.Updates.push_back({ entities.GetStateFromEntity(entity), {} });
+				}
+			}
+		}
 		
 		ServerState::Get().GetSocketApi().UpdateEntities(ServerState::Get().GetConnections().GetAllConnectionIds(), request);
 		entities.ClearDirtyEntities();

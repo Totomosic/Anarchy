@@ -98,6 +98,7 @@ namespace Anarchy
 				LogMessage("/throttle [BytesPerSecond]");
 				LogMessage("/entities [ConnectionId]");
 				LogMessage("/kill EntityId");
+				LogMessage("/tp EntityId x y");
 			});
 
 		m_Registry.Register("status", [this](const RunDebugCommand& command)
@@ -269,6 +270,27 @@ namespace Anarchy
 				else
 				{
 					BLT_ERROR("Invalid argument count");
+				}
+			});
+
+		m_Registry.Register("tp", [this](const RunDebugCommand& command)
+			{
+				if (command.Args.size() == 3)
+				{
+					entityid_t networkId;
+					if (GetIntegerArg(command.Args[0], &networkId))
+					{
+						int x;
+						int y;
+						if (GetIntegerArg(command.Args[1], &x) && GetIntegerArg(command.Args[2], &y))
+						{
+							EntityHandle entity = ServerState::Get().GetEntities().GetEntityByNetworkId(networkId);
+							if (entity)
+							{
+								entity.GetComponent<CTilePosition>()->Position = { x, y };
+							}
+						}
+					}
 				}
 			});
 	}

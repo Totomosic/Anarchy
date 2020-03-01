@@ -7,7 +7,7 @@ namespace Anarchy
 	struct CTileMotion
 	{
 	public:
-		Bolt::Vector2i Destination;
+		Bolt::Vector2f Movement;
 		float Speed;
 	};
 

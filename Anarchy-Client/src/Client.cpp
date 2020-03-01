@@ -64,8 +64,8 @@ namespace Anarchy
 								EntityState current = entities.GetStateFromEntity(entity);
 								if (state != current)
 								{
-									BLT_INFO("{} {}", state.TilePosition, current.TilePosition);
 									entities.ApplyEntityState(update.FinalState);
+									actionHistory.ClearAllActions();
 									BLT_WARN("Applied Server State");
 								}
 							}

@@ -20,6 +20,7 @@ namespace Anarchy
 		void SetCamera(const EntityHandle& camera);
 
 		EntityHandle CreateFromEntityState(const EntityState& state) override;
+		EntityHandle ApplyEntityState(const EntityState& state) override;
 
 	};
 

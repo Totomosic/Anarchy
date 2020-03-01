@@ -13,17 +13,21 @@ namespace Anarchy
 		{
 			ComponentHandle transform = entity.GetComponent<Transform>();
 			ComponentHandle motion = entity.GetComponent<CTileMotion>();
-			Vector2f toDestination = (Vector2f)motion->Destination - transform->Position().xy();
+			Vector2f toDestination = motion->Movement;
 			float length = toDestination.Length();
 			float movement = std::min(length, motion->Speed * (float)delta.Seconds());
 			if (movement == length)
 			{
-				transform->SetLocalXY(motion->Destination);
+				ComponentHandle tilePosition = entity.GetComponent<CTilePosition>();
+				Vector2f currentXY = transform->Position().xy();
+				transform->SetLocalXY(tilePosition->Position);
 				entity.Remove<CTileMotion>();
 			}
 			else
 			{
-				transform->Translate({ toDestination / length * movement, 0.0f });
+				Vector2f deltaMove = toDestination / length * movement;
+				transform->Translate({ deltaMove, 0.0f });
+				motion->Movement -= deltaMove;
 			}
 		}
 	}

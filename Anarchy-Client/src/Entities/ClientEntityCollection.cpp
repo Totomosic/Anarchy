@@ -1,6 +1,8 @@
 #include "clientpch.h"
 #include "ClientEntityCollection.h"
 
+#include "Components/TileMotion.h"
+
 namespace Anarchy
 {
 
@@ -56,6 +58,24 @@ namespace Anarchy
 			ResourcePtr<Font> font = ResourceManager::Get().Fonts().Arial(fontSize);
 			mesh->Models.push_back({ new Model(TextFactory(state.Name, font)), Matrix4f::Scale(scaling, scaling, 1.0f) * Matrix4f::Translation(0, fontSize / scalingFactor, 0), { materialIndex } });
 			mesh->Materials.push_back(ResourceManager::Get().Materials().Font(font, Color::Black));
+		}
+		return entity;
+	}
+
+	EntityHandle ClientEntityCollection::ApplyEntityState(const EntityState& state)
+	{
+		EntityHandle entity = EntityCollection::ApplyEntityState(state);
+		if (entity.HasComponent<Transform>())
+		{
+			ComponentHandle transform = entity.GetTransform();
+			Vector3f position = transform->Position();
+			transform->SetLocalPosition({ (Vector2f)GetEntityTilePosition(entity), position.z });
+		}
+
+		// CLEAR UP ALL OTHER ACTIONS
+		if (entity.HasComponent<CTileMotion>())
+		{
+			entity.Remove<CTileMotion>();
 		}
 		return entity;
 	}

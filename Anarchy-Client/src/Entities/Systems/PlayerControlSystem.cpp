@@ -50,12 +50,6 @@ namespace Anarchy
 
 						m_ActionHistory->PushAction(networkId, action);
 						m_ActionRegistry->ApplyAction(networkId, action);
-						
-						ClientEntityCollection& entities = ClientState::Get().GetEntities();
-						EntityState state = entities.GetStateFromEntity(entity);
-						ActionExecutor executor;
-						EntityState finalState = executor.ApplyAction(state, action);
-						entities.ApplyEntityState(finalState);
 					}
 				}
 			}

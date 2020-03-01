@@ -35,6 +35,12 @@ namespace Anarchy
 		serverInput.CreateText("Server:", displayFont, Color::Black, Transform({ -150, 30, 1 }), AlignH::Left, AlignV::Bottom);
 		serverInput.SetText("localhost:10000");
 
+		UIRectangle& ec2Button = serverInput.CreateRectangle(50, 50, Color::Red, Transform({ 180, 0, 0 }));
+		ec2Button.Events().OnClick().AddEventListener([&serverInput](Event<UI<MouseClickEvent>>& e)
+			{
+				serverInput.SetText("3.106.166.174:10000");
+			});
+
 		UIRectangle& connectButton = serverInput.CreateRectangle(300, 50, Color(50, 200, 50), Transform({ 0, -60, 0 }));
 		connectButton.CreateText("Connect", displayFont, Color::Black, Transform({ 0, 0, 1 }));
 		connectButton.Events().OnClick().AddEventListener([&background, &serverInput, &usernameInput, &gameScene, &scene](Event<UI<MouseClickEvent>>& e)
@@ -113,27 +119,6 @@ namespace Anarchy
 
 					entities.SetCamera(camera);
 					entities.SetControlledEntity(character->Data.NetworkId);
-
-					/*commands.RegisterHandler<TileMovementAction>(ActionType::EntityMove, [&entities](const TileMovementAction& action, bool fromNetwork)
-						{
-							if (!fromNetwork || !entities.IsControllingEntity(action.NetworkId))
-							{
-								EntityHandle entity = entities.GetEntityByNetworkId(action.NetworkId);
-								if (entity && entity.HasComponent<CTilePosition>())
-								{
-									ComponentHandle position = entity.GetComponent<CTilePosition>();
-									CTileMotion motion;
-									motion.Destination = action.Action.Destination;
-									motion.Speed = action.Action.Speed;
-									position->Position = action.Action.Destination;
-									entity.Assign<CTileMotion>(std::move(motion));
-								}
-							}
-							else
-							{
-								// Validate that we are in the right position
-							}
-						});*/
 
 					std::optional<GetEntitiesResponse> otherEntities = ClientState::Get().GetConnection().GetSocketApi().GetEntities({ 0 }, 5.0).Result();
 					if (otherEntities)

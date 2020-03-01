@@ -17,7 +17,7 @@ namespace Anarchy
 		switch (action.Action)
 		{
 		case ActionType::EntityMove:
-			ApplyAction(action.ActionId, CreateAction<TileMovementAction>(action));
+			ApplyAction(action.NetworkId, CreateAction<TileMovementAction>(action));
 			break;
 		default:
 			break;
@@ -46,10 +46,20 @@ namespace Anarchy
 			ComponentHandle tilePosition = entity.GetComponent<CTilePosition>();
 			if (tilePosition)
 			{
-				CTileMotion motion;
-				motion.Destination = tilePosition->Position + action.Movement;
-				motion.Speed = action.Speed;
-				entity.Assign<CTileMotion>(motion);
+				tilePosition->Position += action.Movement;
+				if (entity.HasComponent<CTileMotion>())
+				{
+					ComponentHandle motion = entity.GetComponent<CTileMotion>();
+					motion->Movement += action.Movement;
+					motion->Speed = action.Speed;
+				}
+				else
+				{
+					CTileMotion motion;
+					motion.Movement = action.Movement;
+					motion.Speed = action.Speed;
+					entity.Assign<CTileMotion>(motion);
+				}
 			}
 		}
 	}
