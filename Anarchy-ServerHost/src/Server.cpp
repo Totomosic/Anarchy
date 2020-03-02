@@ -51,15 +51,33 @@ namespace Anarchy
 		{
 			actions[action.NetworkId].push_back(action);
 		}
-		for (const auto& pair : actions)
+		for (auto& pair : actions)
 		{
 			EntityHandle entity = entities.GetEntityByNetworkId(pair.first);
 			if (entity)
 			{
+				std::optional<seqid_t> maxActionId;
+				if (pair.second.size() > 0)
+				{
+					maxActionId = pair.second[0].ActionId;
+					for (const GenericAction& action : pair.second)
+					{
+						if (IsSeqIdGreater(action.ActionId, maxActionId.value()))
+						{
+							maxActionId = action.ActionId;
+						}
+					}
+				}
 				EntityState initialState = entities.GetStateFromEntity(entity);
 				EntityState finalState = executor.ApplyActions(initialState, pair.second);
+				WorldReader& world = ServerState::Get().GetWorld();
+				if (world.GetTile(finalState.TilePosition.x, finalState.TilePosition.y) == TileType::Water)
+				{
+					finalState = initialState;
+					pair.second.clear();
+				}
 				entities.ApplyEntityState(finalState);
-				request.Updates.push_back({ finalState, pair.second });
+				request.Updates.push_back({ finalState, pair.second, maxActionId });
 			}
 		}
 		m_Actions.Clear();

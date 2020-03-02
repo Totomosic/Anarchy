@@ -48,17 +48,9 @@ namespace Anarchy
 						{
 							if (entities.IsControllingEntity(entityId))
 							{
-								if (update.Actions.size() > 0)
+								if (update.MaxActionId)
 								{
-									seqid_t maxActionId = update.Actions[0].ActionId;
-									for (const GenericAction& action : update.Actions)
-									{
-										if (IsSeqIdGreater(action.ActionId, maxActionId))
-										{
-											maxActionId = action.ActionId;
-										}
-									}
-									actionHistory.ClearActionsBeforeIncluding(maxActionId);
+									actionHistory.ClearActionsBeforeIncluding(update.MaxActionId.value());
 								}
 								EntityState state = executor.ApplyActions(update.FinalState, actionHistory.GetAllActions());
 								EntityState current = entities.GetStateFromEntity(entity);

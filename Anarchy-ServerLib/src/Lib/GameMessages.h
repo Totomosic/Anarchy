@@ -96,18 +96,21 @@ namespace Anarchy
 	public:
 		EntityState FinalState;
 		std::vector<GenericAction> Actions;
+		std::optional<seqid_t> MaxActionId = {};
 	};
 
 	inline void Serialize(OutputMemoryStream& stream, const EntityUpdate& update)
 	{
 		Serialize(stream, update.FinalState);
 		Serialize(stream, update.Actions);
+		Serialize(stream, update.MaxActionId);
 	}
 
 	inline void Deserialize(InputMemoryStream& stream, EntityUpdate& update)
 	{
 		Deserialize(stream, update.FinalState);
 		Deserialize(stream, update.Actions);
+		Deserialize(stream, update.MaxActionId);
 	}
 
 	struct UpdateEntitiesRequest
