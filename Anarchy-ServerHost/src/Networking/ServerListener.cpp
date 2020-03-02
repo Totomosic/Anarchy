@@ -9,6 +9,9 @@ namespace Anarchy
 
 #define ANCH_SERVER_BIND_FN(fn) std::bind(&fn, this, std::placeholders::_1)
 
+	static constexpr int CONNECTION_TIMEOUT_MILLISECONDS = 30000;
+	static constexpr int KEEP_ALIVE_SPACING_MILLISECONDS = 1000;
+
 	ServerListener::ServerListener(ServerSocket& socket)
 		: m_Listener(), m_ServerSocket(socket), m_MessageHandlers(), m_ActionQueue(), m_Mutex()
 	{
@@ -53,11 +56,11 @@ namespace Anarchy
 		{
 			connection->UpdateTimeSinceLastPacket(delta);
 			connection->UpdateTimeSinceLastSentPacket(delta);
-			if (connection->GetTimeSinceLastPacket() >= 5000)
+			if (connection->GetTimeSinceLastPacket() >= CONNECTION_TIMEOUT_MILLISECONDS)
 			{
 				connectionsToRemove.push_back(connection->GetConnectionId());
 			}
-			else if (connection->GetTimeSinceLastSentPacket() >= 500)
+			else if (connection->GetTimeSinceLastSentPacket() >= KEEP_ALIVE_SPACING_MILLISECONDS)
 			{
 				keepAliveConnections.push_back(connection->GetConnectionId());
 			}

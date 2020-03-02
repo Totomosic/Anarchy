@@ -71,12 +71,6 @@ namespace Anarchy
 			Vector3f position = transform->Position();
 			transform->SetLocalPosition({ (Vector2f)GetEntityTilePosition(entity), position.z });
 		}
-
-		// CLEAR UP ALL OTHER ACTIONS
-		if (entity.HasComponent<CTileMotion>())
-		{
-			entity.Remove<CTileMotion>();
-		}
 		return entity;
 	}
 

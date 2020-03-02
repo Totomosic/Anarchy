@@ -60,7 +60,7 @@ namespace Anarchy
 		uint16_t GetXTilesPerChunk() const;
 		uint16_t GetYTilesPerChunk() const;
 
-		TileType GetTile(uint32_t x, uint32_t y) const;
+		TileType GetTile(int64_t x, int64_t y) const;
 		TileView GetTiles(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const;
 		
 		void SetTile(uint32_t x, uint32_t y, TileType tile);

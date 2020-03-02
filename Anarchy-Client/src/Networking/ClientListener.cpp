@@ -9,6 +9,9 @@ namespace Anarchy
 
 #define ANCH_BIND_LISTENER_FN(func) std::bind(&func, this, std::placeholders::_1)
 
+	static constexpr int SERVER_TIMEOUT_MILLISECONDS = 10000;
+	static constexpr int KEEP_ALIVE_SPACING_MILLISECONDS = 5000;
+
 	ClientListener::ClientListener(ClientSocket* socket)
 		: m_Bus(), m_TaskManager(m_Bus), m_OnDisconnect(m_Bus.GetEmitter<ServerDisconnect>(ClientEvents::DisconnectedFromServer)), m_ConnectionId(InvalidConnectionId), m_Connecting(false),
 		m_Socket(socket), m_SequenceId(0), m_RemoteSequenceId(0), m_NextRequestId(0), m_Listener(), m_MessageHandlers(), m_RequestMutex(), m_RequestHandlers(),
@@ -131,7 +134,7 @@ namespace Anarchy
 		if (IsConnected() && !IsConnecting())
 		{
 			m_TimeSinceLastReceivedMessage += delta.Milliseconds();
-			if (m_TimeSinceLastReceivedMessage >= 5000)
+			if (m_TimeSinceLastReceivedMessage >= SERVER_TIMEOUT_MILLISECONDS)
 			{
 				std::optional<ServerDisconnectResponse> response = Disconnect({}, 2.0).Result();
 				if (!response)
@@ -142,7 +145,7 @@ namespace Anarchy
 			else
 			{
 				m_TimeSinceLastSentMessage += delta.Milliseconds();
-				if (m_TimeSinceLastSentMessage >= 500)
+				if (m_TimeSinceLastSentMessage >= KEEP_ALIVE_SPACING_MILLISECONDS)
 				{
 					SendKeepAlive();
 					ResetTimeSinceLastSentMessage();

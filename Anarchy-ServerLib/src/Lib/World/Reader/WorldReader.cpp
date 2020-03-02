@@ -99,8 +99,12 @@ namespace Anarchy
 		return m_YTilesPerChunk;
 	}
 
-	TileType WorldReader::GetTile(uint32_t x, uint32_t y) const
+	TileType WorldReader::GetTile(int64_t x, int64_t y) const
 	{
+		if (x < 0 || y < 0 || x >= GetWidthInTiles() || y >= GetHeightInTiles())
+		{
+			return TileType::None;
+		}
 		TileIndex index = CreateTileIndex(x, y);
 		TileType* data = LoadChunk(index.xChunk, index.yChunk);
 		uint32_t dataIndex = GetTileOffsetIndex(index.xOffset, index.yOffset);
