@@ -40,8 +40,7 @@ namespace Anarchy
 		size_t size;
 		Deserialize(stream, size);
 		command.ActionData = std::make_shared<OutputMemoryStream>(size);
-		command.ActionData->Write(stream.GetBufferPtr(), size);
-		stream.Skip(size);
+		command.ActionData->WriteFromStream(stream, size);
 	}
 
 	// =======================================================================================
