@@ -7,10 +7,12 @@
 #include "ServerState.h"
 #include "Lib/Entities/ActionExecutor.h"
 #include "Lib/Entities/Components/NetworkId.h"
+#include "Entities/ActionRegistry.h"
 
 #include "Utils/Config.h"
 
 #include "Lib/Entities/Components/TilePosition.h"
+#include "Lib/Entities/Systems/SpellManager.h"
 
 namespace Anarchy
 {
@@ -22,6 +24,7 @@ namespace Anarchy
 	{
 		Scene& gameScene = SceneManager::Get().AddScene();
 		Layer& gameLayer = gameScene.AddLayer();
+		auto spellManager = gameLayer.Systems().Add<SpellManager>(&m_Actions);
 		ServerState::Get().Initialize(ServerAddress, gameScene, gameLayer);
 		ServerState::Get().GetSocketApi().SetActionQueue(&m_Actions);
 	}
@@ -44,7 +47,8 @@ namespace Anarchy
 		ServerState::Get().GetSocketApi().Update(Time::Get().RenderingTimeline().DeltaTime());
 
 		ServerEntityCollection& entities = ServerState::Get().GetEntities();
-		ActionExecutor executor;
+		ActionRegistry actionRegistry;
+
 		UpdateEntitiesRequest request;
 		std::unordered_map<entityid_t, std::vector<GenericAction>> actions;
 		for (const GenericAction& action : m_Actions.GetAllActions())
@@ -68,16 +72,9 @@ namespace Anarchy
 						}
 					}
 				}
-				EntityState initialState = entities.GetStateFromEntity(entity);
-				EntityState finalState = executor.ApplyActions(initialState, pair.second);
-				WorldReader& world = ServerState::Get().GetWorld();
-				if (world.GetTile(finalState.TilePosition.x, finalState.TilePosition.y) == TileType::Water)
-				{
-					finalState = initialState;
-					pair.second.clear();
-				}
-				entities.ApplyEntityState(finalState);
-				request.Updates.push_back({ finalState, pair.second, maxActionId });
+				std::vector<GenericAction> validActions = actionRegistry.ApplyActions(pair.second);
+				EntityState finalState = entities.GetStateFromEntity(entity);
+				request.Updates.push_back({ finalState, validActions, maxActionId });
 			}
 		}
 		m_Actions.Clear();

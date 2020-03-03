@@ -1,8 +1,7 @@
-#include "clientpch.h"
+#include "serverpch.h"
 #include "ActionRegistry.h"
-#include "ClientState.h"
+#include "ServerState.h"
 
-#include "Entities/Components/TileMotion.h"
 #include "Lib/Entities/Components/TilePosition.h"
 #include "Lib/Entities/Components/CastingSpell.h"
 
@@ -27,17 +26,22 @@ namespace Anarchy
 		return false;
 	}
 
-	void ActionRegistry::ApplyActions(const std::vector<GenericAction>& actions) const
+	std::vector<GenericAction> ActionRegistry::ApplyActions(const std::vector<GenericAction>& actions) const
 	{
+		std::vector<GenericAction> result;
 		for (const GenericAction& action : actions)
 		{
-			ApplyAction(action);
+			if (ApplyAction(action))
+			{
+				result.push_back(action);
+			}
 		}
+		return result;
 	}
 
-	ClientEntityCollection& ActionRegistry::GetEntities() const
+	ServerEntityCollection& ActionRegistry::GetEntities() const
 	{
-		return ClientState::Get().GetEntities();
+		return ServerState::Get().GetEntities();
 	}
 
 	EntityHandle ActionRegistry::GetEntity(entityid_t networkId) const
@@ -50,30 +54,17 @@ namespace Anarchy
 		EntityHandle entity = GetEntity(networkId);
 		if (entity)
 		{
-			ComponentHandle tilePosition = entity.GetComponent<CTilePosition>();
-			if (tilePosition)
+			if (entity.HasComponent<CTilePosition>())
 			{
-				Tilemap& tilemap = ClientState::Get().GetTilemap();
-				Vector2i nextPosition = tilePosition->Position + action.Movement;
-				if (tilemap.GetTile(nextPosition.x, nextPosition.y) != TileType::Water)
+				WorldReader& world = ServerState::Get().GetWorld();
+				ComponentHandle position = entity.GetComponent<CTilePosition>();
+				Vector2i nextPos = position->Position + action.Movement;
+				if (world.GetTile(nextPos.x, nextPos.y) == TileType::Water)
 				{
-					tilePosition->Position = nextPosition;
-					if (entity.HasComponent<CTileMotion>())
-					{
-						ComponentHandle motion = entity.GetComponent<CTileMotion>();
-						motion->Movement += action.Movement;
-						motion->Speed = action.Speed;
-					}
-					else
-					{
-						CTileMotion motion;
-						motion.Movement = action.Movement;
-						motion.Speed = action.Speed;
-						entity.Assign<CTileMotion>(motion);
-					}
-					return true;
+					return false;
 				}
-				return false;
+				position->Position = nextPos;
+				return true;
 			}
 		}
 		return false;

@@ -1,6 +1,6 @@
 #pragma once
 #include "Lib/Entities/EntityActions.h"
-#include "ClientEntityCollection.h"
+#include "ServerEntityCollection.h"
 
 namespace Anarchy
 {
@@ -11,13 +11,7 @@ namespace Anarchy
 		ActionRegistry();
 
 		bool ApplyAction(const GenericAction& action) const;
-		void ApplyActions(const std::vector<GenericAction>& actions) const;
-		
-		template<typename T>
-		bool ApplyAction(entityid_t networkId, const T& action) const
-		{
-			return ApplyActionInternal(networkId, action);
-		}
+		std::vector<GenericAction> ApplyActions(const std::vector<GenericAction>& actions) const;
 
 	private:
 		template<typename T>
@@ -29,7 +23,7 @@ namespace Anarchy
 			return result;
 		}
 
-		ClientEntityCollection& GetEntities() const;
+		ServerEntityCollection& GetEntities() const;
 		EntityHandle GetEntity(entityid_t networkId) const;
 		bool ApplyActionInternal(entityid_t networkId, const TileMovementAction& action) const;
 		bool ApplyActionInternal(entityid_t networkId, const ChannelSpellAction& action) const;

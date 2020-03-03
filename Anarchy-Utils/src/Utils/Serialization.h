@@ -66,4 +66,10 @@ namespace Anarchy
 		}
 	}
 
+	inline void Serialize(OutputMemoryStream& stream, const OutputMemoryStream& data)
+	{
+		Serialize(stream, data.GetRemainingDataSize());
+		stream.Write(data.GetBufferPtr(), data.GetRemainingDataSize());
+	}
+
 }

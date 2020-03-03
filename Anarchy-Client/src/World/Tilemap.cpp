@@ -35,9 +35,32 @@ namespace Anarchy
 		return m_Tiles.data();
 	}
 
+	TileType TileChunk::GetTile(int x, int y) const
+	{
+		if (x < 0 || y < 0 || x >= GetWidth() || y >= GetHeight())
+		{
+			return TileType::None;
+		}
+		return GetTiles()[x + y * GetWidth()];
+	}
+
 	Tilemap::Tilemap(Layer* layer, int tileWidth, int tileHeight)
 		: m_CachedChunks(), m_LoadedChunks(), m_ChunkWidthTiles(16), m_ChunkHeightTiles(16), m_Renderer(layer, tileWidth, tileHeight)
 	{
+	}
+
+	TileType Tilemap::GetTile(int x, int y) const
+	{
+		TileIndex index = CalculateTileIndex(x, y);
+		if (m_CachedChunks.find({ index.ChunkX, index.ChunkY }) != m_CachedChunks.end())
+		{
+			const std::unique_ptr<TileChunk>& chunk = m_CachedChunks.at({ index.ChunkX, index.ChunkY });
+			if (chunk != nullptr)
+			{
+				return chunk->GetTile(index.OffsetX, index.OffsetY);
+			}
+		}
+		return TileType::None;
 	}
 
 	void Tilemap::LoadTilePosition(int x, int y)

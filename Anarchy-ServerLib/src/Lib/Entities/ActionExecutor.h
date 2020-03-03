@@ -1,6 +1,7 @@
 #pragma once
 #include "EntityActions.h"
 #include "EntityState.h"
+#include "EntityCollection.h"
 
 namespace Anarchy
 {
@@ -31,6 +32,7 @@ namespace Anarchy
 		}
 
 		void ApplyActionInternal(EntityState& state, const TileMovementAction& action) const;
+		void ApplyActionInternal(EntityState& state, const ChannelSpellAction& action) const;
 	};
 
 }

@@ -3,7 +3,7 @@
 namespace Anarchy
 {
 
-	class CLifeForce
+	struct CLifeForce
 	{
 	public:
 		float CurrentHealth;

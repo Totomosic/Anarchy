@@ -21,6 +21,7 @@ namespace Anarchy
 		int GetWidth() const;
 		int GetHeight() const;
 		const TileType* GetTiles() const;
+		TileType GetTile(int x, int y) const;
 	};
 
 	class Tilemap
@@ -54,6 +55,7 @@ namespace Anarchy
 	public:
 		Tilemap(Layer* layer, int tileWidth, int tileHeight);
 
+		TileType GetTile(int x, int y) const;
 		void LoadTilePosition(int x, int y);
 
 	private:

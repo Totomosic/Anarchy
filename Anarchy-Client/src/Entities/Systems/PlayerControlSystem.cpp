@@ -5,6 +5,7 @@
 
 #include "Lib/Entities/Components/NetworkId.h"
 #include "Lib/Entities/Components/TilePosition.h"
+#include "Lib/Entities/Components/CastingSpell.h"
 #include "../Components/TileMotion.h"
 
 namespace Anarchy
@@ -48,8 +49,25 @@ namespace Anarchy
 						action.Movement = direction;
 						action.Speed = entity.GetComponent<CPlayerController>()->Speed;
 
-						m_ActionHistory->PushAction(networkId, action);
-						m_ActionRegistry->ApplyAction(networkId, action);
+						if (m_ActionRegistry->ApplyAction(networkId, action))
+						{
+							m_ActionHistory->PushAction(networkId, action);
+						}
+					}
+				}
+				if (!entity.HasComponent<CCastingSpell>())
+				{
+					if (Input::Get().KeyDown(Keycode::Q))
+					{
+						entityid_t networkId = entity.GetComponent<CNetworkId>()->Id;
+						ChannelSpellAction action;
+						action.ChannelTimeSeconds = 1.0f;
+						action.SpellId = 0;
+
+						if (m_ActionRegistry->ApplyAction(networkId, action))
+						{
+							m_ActionHistory->PushAction(networkId, action);
+						}
 					}
 				}
 			}

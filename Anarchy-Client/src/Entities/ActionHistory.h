@@ -18,6 +18,7 @@ namespace Anarchy
 		seqid_t PeekNextActionId() const;
 		const std::vector<GenericAction>& GetAllActions() const;
 		std::vector<GenericAction> GetActionsAfter(seqid_t actionId) const;
+		bool ContainsAction(seqid_t actionId) const;
 
 		// Adds an action and sends it over the network
 		void PushAction(const GenericAction& action);

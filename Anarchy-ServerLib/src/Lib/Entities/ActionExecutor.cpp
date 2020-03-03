@@ -1,4 +1,5 @@
 #include "ActionExecutor.h"
+#include "Components/CastingSpell.h"
 
 namespace Anarchy
 {
@@ -10,12 +11,14 @@ namespace Anarchy
 	EntityState ActionExecutor::ApplyAction(const EntityState& state, const GenericAction& action) const
 	{
 		EntityState finalState = state;
-		InputMemoryStream data(action.ActionData->GetRemainingDataSize());
-		memcpy(data.GetBufferPtr(), action.ActionData->GetBufferPtr(), data.GetRemainingDataSize());
+		InputMemoryStream data = InputMemoryStream::FromStream(*action.ActionData);
 		switch (action.Action)
 		{
 		case ActionType::EntityMove:
 			ApplyActionInternal(finalState, CreateAction<TileMovementAction>(data));
+			break;
+		case ActionType::ChannelSpell:
+			ApplyActionInternal(finalState, CreateAction<ChannelSpellAction>(data));
 			break;
 		default:
 			break;
@@ -28,12 +31,14 @@ namespace Anarchy
 		EntityState finalState = state;
 		for (const GenericAction& action : actions)
 		{
-			InputMemoryStream data(action.ActionData->GetRemainingDataSize());
-			memcpy(data.GetBufferPtr(), action.ActionData->GetBufferPtr(), data.GetRemainingDataSize());
+			InputMemoryStream data = InputMemoryStream::FromStream(*action.ActionData);
 			switch (action.Action)
 			{
 			case ActionType::EntityMove:
 				ApplyActionInternal(finalState, CreateAction<TileMovementAction>(data));
+				break;
+			case ActionType::ChannelSpell:
+				ApplyActionInternal(finalState, CreateAction<ChannelSpellAction>(data));
 				break;
 			default:
 				break;
@@ -45,6 +50,10 @@ namespace Anarchy
 	void ActionExecutor::ApplyActionInternal(EntityState& state, const TileMovementAction& action) const
 	{
 		state.TilePosition += action.Movement;
+	}
+
+	void ActionExecutor::ApplyActionInternal(EntityState& state, const ChannelSpellAction& action) const
+	{
 	}
 
 }

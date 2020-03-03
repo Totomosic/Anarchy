@@ -79,4 +79,11 @@ namespace Anarchy
 		value = {};
 	}
 
+	inline void Deserialize(InputMemoryStream& stream, OutputMemoryStream& data)
+	{
+		decltype(data.GetRemainingDataSize()) length;
+		Deserialize(stream, length);
+		data.WriteFromStream(stream, length);
+	}
+
 }

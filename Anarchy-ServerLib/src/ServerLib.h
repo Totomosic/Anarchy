@@ -13,10 +13,14 @@ namespace Anarchy
 	using entityid_t = uint32_t;
 	using connid_t = uint16_t;
 
+	using spellid_t = uint16_t;
+
 	static constexpr connid_t InvalidConnectionId = (connid_t)-1;
 	static constexpr uint32_t MaxPacketSize = 1200;
 
 	static constexpr entityid_t InvalidNetworkId = (entityid_t)-1;
+
+	static constexpr spellid_t InvalidSpellId = (spellid_t)-1;
 
 	inline bool IsSeqIdGreater(seqid_t s1, seqid_t s2)
 	{

@@ -42,6 +42,14 @@ namespace Anarchy
 		return {};
 	}
 
+	bool ActionHistory::ContainsAction(seqid_t actionId) const
+	{
+		return std::find_if(m_Actions.begin(), m_Actions.end(), [actionId](const GenericAction& action)
+			{
+				return action.ActionId == actionId;
+			}) != m_Actions.end();
+	}
+
 	void ActionHistory::PushAction(const GenericAction& action)
 	{
 		if (ClientState::Get().HasConnection())
