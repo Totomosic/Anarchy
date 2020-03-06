@@ -7,7 +7,7 @@ namespace Anarchy
 	extern Bolt::DirectoryPath WorldDirectory;
 
 	ServerState::ServerState()
-		: m_Socket(), m_Connections(), m_Entities(), m_DebugCommands(), m_WorldReader(WorldDirectory)
+		: m_TargetDeltaTime(1.0 / 20.0), m_Socket(), m_Connections(), m_Entities(), m_DebugCommands(), m_WorldReader(WorldDirectory)
 	{
 		BLT_INFO("Loading world from {}", WorldDirectory);
 	}
@@ -18,8 +18,9 @@ namespace Anarchy
 		return instance;
 	}
 
-	void ServerState::Initialize(const SocketAddress& serverAddress, Scene& gameScene, Layer& gameLayer)
+	void ServerState::Initialize(double targetDeltaTime, const SocketAddress& serverAddress, Scene& gameScene, Layer& gameLayer)
 	{
+		m_TargetDeltaTime = targetDeltaTime;
 		m_Entities = std::make_unique<ServerEntityCollection>(gameScene, gameLayer);
 		m_Socket = std::make_unique<ServerSocket>(serverAddress);
 		m_Socket->Run();
@@ -27,6 +28,21 @@ namespace Anarchy
 		m_Listener = std::make_unique<ServerListener>(*m_Socket);
 
 		m_DebugCommands.StartStdinListener();
+	}
+
+	double ServerState::GetTargetDeltaTime() const
+	{
+		return m_TargetDeltaTime;
+	}
+
+	double ServerState::GetTargetTicksPerSecond() const
+	{
+		return 1.0 / m_TargetDeltaTime;
+	}
+
+	void ServerState::SetTargetTicksPerSecond(int tps)
+	{
+		m_TargetDeltaTime = 1.0 / (double)tps;
 	}
 
 	const ServerSocket& ServerState::GetSocket() const

@@ -25,8 +25,11 @@ namespace Anarchy
 		Scene& gameScene = SceneManager::Get().AddScene();
 		Layer& gameLayer = gameScene.AddLayer();
 		auto spellManager = gameLayer.Systems().Add<SpellManager>(&m_Actions);
-		ServerState::Get().Initialize(ServerAddress, gameScene, gameLayer);
+		ServerState::Get().Initialize(TARGET_DELTA_TIME, ServerAddress, gameScene, gameLayer);
 		ServerState::Get().GetSocketApi().SetActionQueue(&m_Actions);
+
+		m_AverageDelta = TARGET_DELTA_TIME;
+		m_FrameStart = std::chrono::high_resolution_clock::now();
 	}
 
 	void Server::Tick()
@@ -35,15 +38,16 @@ namespace Anarchy
 
 	void Server::Update()
 	{
-		static double prevSleep = 0;
-		double delta = Time::Get().RenderingTimeline().DeltaTime() - prevSleep;
-		double difference = TARGET_DELTA_TIME - delta;
-		if (difference > 0)
+		m_AverageDelta = 0.9 * m_AverageDelta + 0.1 * Time::Get().RenderingTimeline().DeltaTime();
+		double targetDeltaSeconds = ServerState::Get().GetTargetDeltaTime();
+		size_t targetDeltaNanoseconds = (size_t)(targetDeltaSeconds * 1e9);
+		size_t delta = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - m_FrameStart).count();
+		if (delta < targetDeltaNanoseconds)
 		{
-			prevSleep = difference;
-			std::this_thread::sleep_for(std::chrono::nanoseconds((size_t)(difference * 1e9)));
+			std::this_thread::sleep_for(std::chrono::nanoseconds(targetDeltaNanoseconds - delta));
 		}
 
+		m_FrameStart = std::chrono::high_resolution_clock::now();
 		ServerState::Get().GetSocketApi().Update(Time::Get().RenderingTimeline().DeltaTime());
 
 		ServerEntityCollection& entities = ServerState::Get().GetEntities();

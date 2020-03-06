@@ -96,6 +96,7 @@ namespace Anarchy
 				LogMessage("/list");
 				LogMessage("/disconnect ConnectionId");
 				LogMessage("/throttle [BytesPerSecond]");
+				LogMessage("/tps [tps]");
 				LogMessage("/entities [ConnectionId]");
 				LogMessage("/kill EntityId");
 				LogMessage("/tp EntityId x y");
@@ -200,6 +201,27 @@ namespace Anarchy
 				else
 				{
 					BLT_ERROR("Invalid args for /throttle");
+				}
+			});
+
+		m_Registry.Register("tps", [this](const RunDebugCommand& command)
+			{
+				if (command.Args.size() != 1)
+				{
+					LogMessage("Ticks per second: " + std::to_string((int)round(Time::Get().FramesPerSecond())));
+				}
+				else
+				{
+					int tps;
+					if (GetIntegerArg(command.Args[0], &tps))
+					{
+						ServerState::Get().SetTargetTicksPerSecond(tps);
+						LogMessage("Set target tps: " + std::to_string(tps));
+					}
+					else
+					{
+						BLT_ERROR("Invalid tps argument");
+					}
 				}
 			});
 

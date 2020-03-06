@@ -1,6 +1,7 @@
 #include "serverpch.h"
 #include "Server.h"
 #include "Engine/Engine.h"
+#include "Engine/Networking/SocketUtil.h"
 #include "../vendor/argparse/argparse.h"
 
 namespace Anarchy
@@ -20,7 +21,7 @@ namespace Anarchy
 		parser.add_argument()
 			.name("--bind-address")
 			.description("Address to bind to")
-			.required(true);
+			.required(false);
 		parser.add_argument()
 			.names({ "-p", "--port" })
 			.description("Port to bind to")
@@ -42,10 +43,24 @@ namespace Anarchy
 			return;
 		}
 
-		std::string address = parser.get<std::string>("bind-address");
 		int port = parser.get<int>("port");
-
-		ServerAddress = SocketAddress(address, port);
+		if (parser.exists("bind-address"))
+		{
+			std::string address = parser.get<std::string>("bind-address");
+			ServerAddress = SocketAddress(address, port);
+		}
+		else
+		{
+			std::vector<uint32_t> addresses = Bolt::SocketUtil::GetIP4Addresses();
+			if (addresses.size() > 0)
+			{
+				ServerAddress = SocketAddress(addresses[0], port);
+			}
+			else
+			{
+				BLT_ASSERT(false, "No server address found.");
+			}
+		}
 		WorldDirectory = Bolt::DirectoryPath(parser.get<std::string>("world"));
 
 		e.SetApplication<Server>();

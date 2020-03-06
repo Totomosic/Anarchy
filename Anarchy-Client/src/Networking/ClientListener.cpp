@@ -323,8 +323,20 @@ namespace Anarchy
 				entityid_t networkId = update.FinalState.NetworkId;
 				if (m_ReceivedEntityUpdates.find(networkId) != m_ReceivedEntityUpdates.end())
 				{
-					m_ReceivedEntityUpdates[networkId].FinalState = update.FinalState;
-					m_ReceivedEntityUpdates[networkId].Actions = ConcatVectors(m_ReceivedEntityUpdates[networkId].Actions, update.Actions);
+					EntityUpdate& u = m_ReceivedEntityUpdates[networkId];
+					u.FinalState = update.FinalState;
+					u.Actions.insert(u.Actions.end(), update.Actions.begin(), update.Actions.end());
+					if (update.MaxActionId)
+					{
+						if (!u.MaxActionId)
+						{
+							u.MaxActionId = update.MaxActionId;
+						}
+						else if (IsSeqIdGreater(*update.MaxActionId, *u.MaxActionId))
+						{
+							u.MaxActionId = update.MaxActionId;
+						}
+					}
 				}
 				else
 				{

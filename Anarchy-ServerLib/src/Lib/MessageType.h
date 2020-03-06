@@ -35,11 +35,20 @@ namespace Anarchy
 		EntityDied,
 		EntityDamaged,
 		EntityRespawned,
-		SetControlledEntity
+		SetControlledEntity,
+
+		MAX_MESSAGE_TYPES
 	};
 
-	ANCH_DEFINE_DEFAULT_SERIALIZE(MessageType);
-	ANCH_DEFINE_DEFAULT_DESERIALIZE(MessageType);
+	inline void Serialize(OutputMemoryStream& stream, const MessageType& value)
+	{
+		stream.Write(value);
+	}
+
+	inline void Deserialize(InputMemoryStream& stream, MessageType& value)
+	{
+		stream.Read(&value);
+	}
 
 	enum class MessageCategory : uint8_t
 	{

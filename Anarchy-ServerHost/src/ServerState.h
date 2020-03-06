@@ -13,6 +13,8 @@ namespace Anarchy
 	class ServerState
 	{
 	private:
+		double m_TargetDeltaTime;
+
 		std::unique_ptr<ServerSocket> m_Socket;
 		std::unique_ptr<ServerListener> m_Listener;
 		ConnectionsManager m_Connections;
@@ -29,7 +31,11 @@ namespace Anarchy
 		static ServerState& Get();
 
 	public:
-		void Initialize(const SocketAddress& serverAddress, Scene& gameScene, Layer& gameLayer);
+		void Initialize(double targetDeltaTime, const SocketAddress& serverAddress, Scene& gameScene, Layer& gameLayer);
+
+		double GetTargetDeltaTime() const;
+		double GetTargetTicksPerSecond() const;
+		void SetTargetTicksPerSecond(int tps);
 
 		const ServerSocket& GetSocket() const;
 		ServerSocket& GetSocket();
