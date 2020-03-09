@@ -62,7 +62,11 @@ namespace Anarchy
 						entityid_t networkId = entity.GetComponent<CNetworkId>()->Id;
 						ChannelSpellAction action;
 						action.ChannelTimeSeconds = 1.0f;
-						action.SpellId = 0;
+						action.SpellId = SpellType::Fireball;
+
+						FireballCastData data;
+						data.Target = ClientState::Get().GetEntities().GetSelectedTile();
+						Serialize(action.SpellData, data);
 
 						if (m_ActionRegistry->ApplyAction(networkId, action))
 						{

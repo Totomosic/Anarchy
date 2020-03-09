@@ -21,6 +21,8 @@ namespace Anarchy
 			return ApplyActionInternal(action.NetworkId, CreateAction<TileMovementAction>(action));
 		case ActionType::ChannelSpell:
 			return ApplyActionInternal(action.NetworkId, CreateAction<ChannelSpellAction>(action));
+		case ActionType::CastSpell:
+			return ApplyActionInternal(action.NetworkId, CreateAction<CastSpellAction>(action));
 		default:
 			break;
 		}
@@ -95,6 +97,23 @@ namespace Anarchy
 			}
 		}
 		return false;
+	}
+
+	bool ActionRegistry::ApplyActionInternal(entityid_t networkId, const CastSpellAction& action) const
+	{
+		EntityHandle entity = GetEntity(networkId);
+		if (entity)
+		{
+			if (entity.HasComponent<CCastingSpell>())
+			{
+				ComponentHandle casting = entity.GetComponent<CCastingSpell>();
+				if (casting->SpellId == action.SpellId)
+				{
+					entity.Remove<CCastingSpell>();
+				}
+			}
+		}
+		return true;
 	}
 
 }

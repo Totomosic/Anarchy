@@ -12,7 +12,7 @@
 #include "Utils/Config.h"
 
 #include "Lib/Entities/Components/TilePosition.h"
-#include "Lib/Entities/Systems/SpellManager.h"
+#include "Entities/Systems/SpellManager.h"
 
 namespace Anarchy
 {
@@ -39,6 +39,7 @@ namespace Anarchy
 	void Server::Update()
 	{
 		m_AverageDelta = 0.9 * m_AverageDelta + 0.1 * Time::Get().RenderingTimeline().DeltaTime();
+		// Can only accurately fix tps to ~200 due to low precision os-level thread swapping
 		double targetDeltaSeconds = ServerState::Get().GetTargetDeltaTime();
 		size_t targetDeltaNanoseconds = (size_t)(targetDeltaSeconds * 1e9);
 		size_t delta = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - m_FrameStart).count();

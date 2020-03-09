@@ -1,5 +1,6 @@
 #pragma once
 #include "ServerLib.h"
+#include "Lib/Data/SpellTypes.h"
 
 namespace Anarchy
 {
@@ -77,7 +78,7 @@ namespace Anarchy
 	public:
 		static constexpr ActionType Type = ActionType::ChannelSpell;
 	public:
-		spellid_t SpellId;
+		SpellType SpellId;
 		float ChannelTimeSeconds;
 		OutputMemoryStream SpellData;
 	};
@@ -106,7 +107,7 @@ namespace Anarchy
 		static constexpr ActionType Type = ActionType::CastSpell;
 	public:
 		entityid_t CasterNetworkId;
-		spellid_t SpellId;
+		SpellType SpellId;
 		OutputMemoryStream SpellData;
 	};
 

@@ -33,6 +33,7 @@ namespace Anarchy
 		EntityHandle GetEntity(entityid_t networkId) const;
 		bool ApplyActionInternal(entityid_t networkId, const TileMovementAction& action) const;
 		bool ApplyActionInternal(entityid_t networkId, const ChannelSpellAction& action) const;
+		bool ApplyActionInternal(entityid_t networkId, const CastSpellAction& action) const;
 	};
 
 }

@@ -5,6 +5,7 @@
 #include "ClientState.h"
 #include "Entities/Systems/PlayerControlSystem.h"
 #include "Entities/Systems/MovementSystem.h"
+#include "Entities/Systems/TileIndicatorSystem.h"
 
 #include "Lib/Entities/Components/TilePosition.h"
 #include "Entities/Components/TileMotion.h"
@@ -116,8 +117,15 @@ namespace Anarchy
 					ActionRegistry& registry = ClientState::Get().GetActionRegistry();
 					auto movementSystem = gameLayer.Systems().Add<MovementSystem>();
 					auto controlSystem = gameLayer.Systems().Add<PlayerControlSystem>(&actions, &registry);
+					auto indicatorSystem = gameLayer.Systems().Add<TileIndicatorSystem>();
+
+					EntityFactory factory = gameLayer.GetFactory();
+					EntityHandle tileIndicator = factory.Rectangle(1.0f, 1.0f, Color(255, 0, 0, 100));
+					tileIndicator.Assign<CTileIndicator>();
+					tileIndicator.Assign<CTilePosition>();
 
 					entities.SetCamera(camera);
+					entities.SetTileIndicator(tileIndicator);
 					entities.SetControlledEntity(character->Data.NetworkId);
 
 					std::optional<GetEntitiesResponse> otherEntities = ClientState::Get().GetConnection().GetSocketApi().GetEntities({ 0 }, 5.0).Result();

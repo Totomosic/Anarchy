@@ -2,6 +2,7 @@
 #include "ClientEntityCollection.h"
 
 #include "Components/TileMotion.h"
+#include "Lib/Entities/Components/TilePosition.h"
 
 namespace Anarchy
 {
@@ -41,6 +42,21 @@ namespace Anarchy
 		{
 			m_Camera.GetTransform()->SetParent(GetEntityByNetworkId(m_ControlledEntity).GetTransform().Get());
 		}
+	}
+
+	void ClientEntityCollection::SetTileIndicator(const EntityHandle& tileIndicator)
+	{
+		BLT_ASSERT(tileIndicator.HasComponent<CTilePosition>(), "Invalid indicator");
+		m_TileIndicator = tileIndicator;
+	}
+
+	Vector2i ClientEntityCollection::GetSelectedTile() const
+	{
+		if (m_TileIndicator)
+		{
+			return m_TileIndicator.GetComponent<CTilePosition>()->Position;
+		}
+		return InvalidTile;
 	}
 
 	EntityHandle ClientEntityCollection::CreateFromEntityState(const EntityState& state)

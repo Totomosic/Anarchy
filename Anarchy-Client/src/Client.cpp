@@ -48,15 +48,15 @@ namespace Anarchy
 						{
 							if (entities.IsControllingEntity(entityId))
 							{
+								for (const GenericAction& action : update.Actions)
+								{
+									if (!actionHistory.ContainsAction(action.ActionId))
+									{
+										actionRegistry.ApplyAction(action);
+									}
+								}
 								if (update.MaxActionId)
 								{
-									for (const GenericAction& action : update.Actions)
-									{
-										if (!actionHistory.ContainsAction(action.ActionId))
-										{
-											actionRegistry.ApplyAction(action);
-										}
-									}
 									actionHistory.ClearActionsBeforeIncluding(update.MaxActionId.value());
 								}
 								EntityState state = executor.ApplyActions(update.FinalState, actionHistory.GetAllActions());

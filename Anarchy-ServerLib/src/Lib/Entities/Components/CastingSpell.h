@@ -1,5 +1,6 @@
 #pragma once
 #include "ServerLib.h"
+#include "Lib/Data/SpellTypes.h"
 
 namespace Anarchy
 {
@@ -7,7 +8,7 @@ namespace Anarchy
 	struct CCastingSpell
 	{
 	public:
-		spellid_t SpellId;
+		SpellType SpellId;
 		float RemainingCastingTimeSeconds;
 		OutputMemoryStream SpellData;
 	};
