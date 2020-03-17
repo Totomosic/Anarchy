@@ -13,7 +13,7 @@ namespace Anarchy
 	static constexpr int KEEP_ALIVE_SPACING_MILLISECONDS = 5000;
 
 	ClientListener::ClientListener(ClientSocket* socket)
-		: m_Bus(), m_TaskManager(m_Bus), m_OnDisconnect(m_Bus.GetEmitter<ServerDisconnect>(ClientEvents::DisconnectedFromServer)), m_ConnectionId(InvalidConnectionId), m_Connecting(false),
+		: m_Bus(), m_TaskManager(m_Bus), m_OnDisconnect(m_Bus.GetEmitter<ServerDisconnect>()), m_ConnectionId(InvalidConnectionId), m_Connecting(false),
 		m_Socket(socket), m_SequenceId(0), m_RemoteSequenceId(0), m_NextRequestId(0), m_Listener(), m_MessageHandlers(), m_RequestMutex(), m_RequestHandlers(),
 		m_TimeSinceLastReceivedMessage(0), m_TimeSinceLastSentMessage(0), m_ReceivedMessages(), m_SentMessages(), m_ReceivedEntityUpdates()
 	{

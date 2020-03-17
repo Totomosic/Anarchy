@@ -10,7 +10,6 @@ namespace Anarchy
 
 	void Client::Init()
 	{
-		GetWindow().DisableVSync();
 		Scene& titleScene = SceneManager::Get().AddScene();
 		Scene& gameScene = SceneManager::Get().AddScene();
 
@@ -21,7 +20,6 @@ namespace Anarchy
 
 	void Client::Tick()
 	{
-		
 	}
 
 	void Client::Update()

@@ -6,7 +6,7 @@ namespace Anarchy
 {
 
 	ServerSocket::ServerSocket(const SocketAddress& address)
-		: m_Address(address), m_Socket(), m_ChunkSender(&m_Socket), m_ChunkReceiver(&m_Socket), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ClientMessageReceived>(ServerEvents::ClientMessageRecevied)), 
+		: m_Address(address), m_Socket(), m_ChunkSender(&m_Socket), m_ChunkReceiver(&m_Socket), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ClientMessageReceived>()), 
 		m_Packets(), m_MaxBytesPerSecond(1024 * 1024 * 1), m_MaxBytes(0), m_SentBytes(0)
 	{
 		m_Bus.SetImmediateMode(true);

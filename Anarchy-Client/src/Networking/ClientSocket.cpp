@@ -8,7 +8,7 @@ namespace Anarchy
 {
 
 	ClientSocket::ClientSocket(const SocketAddress& address)
-		: m_Address(address), m_Socket(), m_ChunkSender(&m_Socket), m_ChunkReceiver(&m_Socket), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>(ServerEvents::ServerMessageReceived)), m_ShutdownListener(false)
+		: m_Address(address), m_Socket(), m_ChunkSender(&m_Socket), m_ChunkReceiver(&m_Socket), m_Bus(), m_OnMessage(m_Bus.GetEmitter<ServerMessageReceived>()), m_ShutdownListener(false)
 	{
 		m_Bus.SetImmediateMode(true);
 		m_Socket.Connect(m_Address);
@@ -86,13 +86,6 @@ namespace Anarchy
 				BLT_INFO("Stopped Listener Thread");
 				m_ShutdownListener = false;
 			});
-	}
-
-	void ClientSocket::HardResetStream(InputMemoryStream& stream) const
-	{
-		InputMemoryStream result(stream.GetRemainingDataSize());
-		memcpy(result.GetBufferPtr(), stream.GetBufferPtr(), stream.GetRemainingDataSize());
-		stream = std::move(result);
 	}
 
 }

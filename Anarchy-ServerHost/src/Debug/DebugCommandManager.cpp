@@ -1,6 +1,5 @@
 #include "serverpch.h"
 #include "DebugCommandManager.h"
-#include "Events.h"
 #include "Core/Tasks/TaskManager.h"
 
 #include "ServerState.h"
@@ -15,7 +14,7 @@ namespace Anarchy
 {
 
 	Anarchy::DebugCommandManager::DebugCommandManager()
-		: m_Registry(), m_Emitter(EventManager::Get().Bus().GetEmitter<RunDebugCommand>(ServerEvents::RunDebugCommand)), m_EventListener()
+		: m_Registry(), m_Emitter(EventManager::Get().Bus().GetEmitter<RunDebugCommand>()), m_EventListener()
 	{
 		m_EventListener = m_Emitter.AddScopedEventListener(std::bind(&DebugCommandManager::EventHandler, this, std::placeholders::_1));
 		RegisterCommands();

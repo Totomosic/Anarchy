@@ -60,7 +60,6 @@ namespace Anarchy
 
 	private:
 		void LaunchListenerThread();
-		void HardResetStream(InputMemoryStream& stream) const;
 
 	};
 
