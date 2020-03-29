@@ -8,12 +8,55 @@
 #include "Entities/Systems/TileIndicatorSystem.h"
 
 #include "Lib/Entities/Components/TilePosition.h"
+#include "Lib/Entities/Components/LinearPath.h"
 #include "Entities/Components/TileMotion.h"
 
+#include "Lib/Entities/Systems/PhysicsSystem.h"
+
 #include "World/Tilemap.h"
+#include "Events/SpellCast.h"
 
 namespace Anarchy
 {
+
+	void CastFireball(ClientEntityCollection& entities, ESpellCast& data)
+	{
+		FireballSpellData spellData;
+		Deserialize(data.CastData, spellData);
+		EntityHandle caster = entities.GetEntityByNetworkId(data.CasterId);
+		if (caster)
+		{
+			Vector2f position = caster.GetTransform()->Position().xy();
+			Vector2f toDestination = spellData.Target - position;
+			float length = toDestination.Length();
+			float timeToExplode = length / spellData.Speed;
+			EntityHandle fireball = entities.GetGameLayer().GetFactory().Circle(1.0f, Color::Red, Transform({ position, 0.0f }));
+			fireball.Assign<CLinearPath>(CLinearPath{ spellData.Target, spellData.Speed });
+			Time::Get().RenderingTimeline().AddFunction(timeToExplode, [fireball]() mutable
+				{
+					fireball.Destroy();
+				});
+		}
+	}
+
+	void SetupSpells()
+	{
+		EventManager::Get().Bus().AddEventListener<ESpellCast>([](Event<ESpellCast>& e)
+			{
+				if (ClientState::Get().HasEntities())
+				{
+					ClientEntityCollection& entities = ClientState::Get().GetEntities();
+					switch (e.Data.Type)
+					{
+					case SpellType::Fireball:
+						CastFireball(entities, e.Data);
+						break;
+					default:
+						break;
+					}
+				}
+			});
+	}
 
 	void CreateTitleScene(Scene& scene, const Window& window, Scene& gameScene)
 	{
@@ -88,6 +131,7 @@ namespace Anarchy
 
 	void CreateGameScene(Scene& scene, const Window& window)
 	{
+		SetupSpells();
 		scene.OnLoad().AddEventListener([&scene](Event<SceneLoadEvent>& e)
 			{
 				CreateCharacterRequest request;
@@ -118,6 +162,7 @@ namespace Anarchy
 					auto movementSystem = gameLayer.Systems().Add<MovementSystem>();
 					auto controlSystem = gameLayer.Systems().Add<PlayerControlSystem>(&actions, &registry);
 					auto indicatorSystem = gameLayer.Systems().Add<TileIndicatorSystem>();
+					auto physics = gameLayer.Systems().Add<PhysicsSystem>();
 
 					EntityFactory factory = gameLayer.GetFactory();
 					EntityHandle tileIndicator = factory.Rectangle(1.0f, 1.0f, Color(255, 0, 0, 100));

@@ -6,6 +6,8 @@
 #include "Lib/Entities/Components/TilePosition.h"
 #include "Lib/Entities/Components/CastingSpell.h"
 
+#include "Events/SpellCast.h"
+
 namespace Anarchy
 {
 
@@ -109,6 +111,7 @@ namespace Anarchy
 				ComponentHandle casting = entity.GetComponent<CCastingSpell>();
 				if (casting->SpellId == action.SpellId)
 				{
+					EventManager::Get().Bus().Emit(ESpellCast{ action.SpellId, action.CasterNetworkId, InputMemoryStream::FromStream(action.SpellData) });
 					entity.Remove<CCastingSpell>();
 				}
 			}

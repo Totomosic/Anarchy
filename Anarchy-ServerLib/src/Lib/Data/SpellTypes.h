@@ -44,7 +44,7 @@ namespace Anarchy
 	public:
 		Vector2i Target;
 		Vector2i ExplosionSize;
-		float TimeToExplode;
+		float Speed;
 		float Damage;
 	};
 
@@ -52,7 +52,7 @@ namespace Anarchy
 	{
 		Serialize(stream, data.Target);
 		Serialize(stream, data.ExplosionSize);
-		Serialize(stream, data.TimeToExplode);
+		Serialize(stream, data.Speed);
 		Serialize(stream, data.Damage);
 	}
 
@@ -60,7 +60,7 @@ namespace Anarchy
 	{
 		Deserialize(stream, data.Target);
 		Deserialize(stream, data.ExplosionSize);
-		Deserialize(stream, data.TimeToExplode);
+		Deserialize(stream, data.Speed);
 		Deserialize(stream, data.Damage);
 	}
 

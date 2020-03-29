@@ -1,0 +1,19 @@
+name: Build-Linux
+on: push
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install X11
+        run: sudo apt-get install -y libx11-dev libgl1-mesa-dev xorg-dev
+      - name: Checkout Anarchy
+        uses: actions/checkout@v2
+      - name: Get submodules
+        run: git submodule update --init --progress --depth 1
+      - name: Generate makefiles
+        run: ./Linux-GenProjects.sh
+        working-directory: Scripts
+      - name: Make Anarchy-ServerHost
+        run: make -j2 Anarchy-ServerHost
+      - name: Make Anarchy-Client
+        run: make -j2 Anarchy-Client

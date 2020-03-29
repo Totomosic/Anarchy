@@ -1,8 +1,10 @@
 #include "serverpch.h"
 #include "SpellManager.h"
 #include "ServerLib.h"
-#include "Lib/Entities/Components/NetworkId.h"
 #include "Core/Time/Time.h"
+
+#include "Lib/Entities/Components/NetworkId.h"
+#include "Lib/Entities/Components/TilePosition.h"
 
 namespace Anarchy
 {
@@ -48,14 +50,20 @@ namespace Anarchy
 		FireballSpellData spellData;
 		spellData.Target = data.Target;
 		spellData.ExplosionSize = { 5, 5 };
-		spellData.TimeToExplode = 2;
+		spellData.Speed = 20;
 		spellData.Damage = Random::NextInt(8, 48);
+
 		CastSpellAction action;
 		action.SpellId = SpellType::Fireball;
 		action.CasterNetworkId = networkId;
 		Serialize(action.SpellData, spellData);
 
-		Time::Get().RenderingTimeline().AddFunction(spellData.TimeToExplode, [spellData]()
+		Vector2f origin = entity.GetComponent<CTilePosition>()->Position;
+		Vector2f toDestination = spellData.Target - origin;
+		float length = toDestination.Length();
+		float timeToExplode = length / spellData.Speed;
+
+		Time::Get().RenderingTimeline().AddFunction(timeToExplode, [spellData]()
 			{
 				BLT_INFO("EXPLOSION AT {}", spellData.Target);
 			});
